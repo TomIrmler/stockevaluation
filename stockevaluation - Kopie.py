@@ -1,6 +1,6 @@
 import FundamentalAnalysis as fa
 
-api_key = '2355734d1486c0599f415923d59c1387'
+api_key = 'APIKEY'
 
 def rate(ticker):
 
