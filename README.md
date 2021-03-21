@@ -1,3 +1,3 @@
 # stockevaluation
 
-Hier können wir dan Erklärungen usw. hinschreiben.
+Hier können wir dann Erklärungen usw. hinschreiben.
