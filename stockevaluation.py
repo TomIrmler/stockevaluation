@@ -1,31 +1,50 @@
 import FundamentalAnalysis as fa
+import coinoxr as oxr
 
 api_key = '2355734d1486c0599f415923d59c1387'
 
+oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.
+exchange_rates = oxr.Latest().get()
+
+def Euro(Wert, Währung):
+    global exchange_rates
+    USDtoEUR = exchange_rates.body["rates"]["EUR"]
+    USDtoWährung = exchange_rates.body["rates"][Währung]
+    WertinEUR = Wert / USDtoWährung * USDtoEUR
+    
+    return WertinEUR
+
 def rate(ticker):
 
+    global exchange_rates
+
     try:
-        quote = fa.quote(ticker, api_key)
-        income = fa.income_statement(ticker, api_key, period="annual")
-        balance = fa.balance_sheet_statement(ticker, api_key, period="annual")
-        cashflow = fa.cash_flow_statement(ticker, api_key, period="annual")
+        quote = fa.quote(ticker, api_key)[0] 
+        income = fa.income_statement(ticker, api_key, period="annual").iloc[:,0] 
+        balance = fa.balance_sheet_statement(ticker, api_key, period="annual").iloc[:,0]
+        cashflow = fa.cash_flow_statement(ticker, api_key, period="annual").iloc[:,0]
+        
+        statement_currency = income["reportedCurrency"]
+        quote_currency = "USD" 
 
+        if statement_currency not in exchange_rates.body["rates"]:
+            return "Error: Die Zahlen der angegebenen Aktie sind in einer unbekannten Währung angegeben."
 
-        if type(quote[0]["pe"]) == float or type(quote[0]["pe"]) == int:
-            KGV = quote[0]["pe"]
+        if type(quote["pe"]) == float or type(quote["pe"]) == int:
+            KGV = quote["pe"]
             KGVScore=rateKGV(KGV)*weight_KGV*100
 
         else:
             return "Error: Die angegebene Aktie hat kein KGV. Versuchen Sie eine andere Aktie, wie z.B. AAPL oder AMZN."
 
-        grossProfit = income["2020"]["grossProfit"]
-        revenue = income["2020"]["revenue"]
-        volume = quote[0]["volume"]
-        price = quote[0]["price"]
-        dividendsPaid = cashflow["2020"]["dividendsPaid"]
-        sharesOutstanding = quote[0]["sharesOutstanding"]
-        totalAssets = balance["2020"]["totalAssets"]
-        totalLiabilities = balance["2020"]["totalLiabilities"]
+        grossProfit = Euro(income["grossProfit"], statement_currency)         
+        revenue = Euro(income["revenue"], statement_currency) 
+        volume = quote["volume"]
+        price = Euro(quote["price"], quote_currency)
+        dividendsPaid = Euro(cashflow["dividendsPaid"], statement_currency)
+        sharesOutstanding = quote["sharesOutstanding"]
+        totalAssets = Euro(balance["totalAssets"], statement_currency)
+        totalLiabilities = Euro(balance["totalLiabilities"], statement_currency)
 
 
         MargeScore=rateMarge(grossProfit, revenue)*weight_BruttoMarge*100
@@ -42,7 +61,7 @@ def rate(ticker):
         ScoreUmsatzRound=round(UmsatzScore,2)
         ScoreEKQRound=round(EKQScore,2)
         ScoreKGVRound=round(KGVScore,2)
-
+ 
         maxMarge=round(weight_BruttoMarge*800,2)
         maxLiquidity=round(weight_Aktienliquidität*800,2)
         maxDividendyield=round(weight_Dividendenrendite*800,2)
@@ -57,10 +76,7 @@ def rate(ticker):
         nomLiquidity=round(volume*price/1000000,2)
         nomUmsatz=round(revenue/1000000,2)
 
-    
 
-
-        
         print(f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
 Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
 Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
@@ -199,21 +215,34 @@ def showpreferences():
     print("Aktienliquidität\t\t{0}%\n".format(weight_Aktienliquidität*100))
 
 def helppage():
-    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetpreferences\t\t- Kennzahlen gewichten\nshowpreferences\t\t- aktuelle Gewichtung anzeigen
-rate + <Ticker Symbol>\t- Rating durchführen\nSTRG + C\t\t- Programm beenden\n""")
+    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetprefernces\t\t\t\t-Kennzahlen gewichten\nshowpreferences\t\t\t\t-aktuelle Gewichtung anzeigen
+rate + <Ticker Symbol>\t\t\t-Rating durchführen\nSTRG + C\t\t\t\t-Programm beenden\n""")
+
+def askforpref(k_index, total):
+    k_strings = ["der KGV", "die Brutto-Marge", "der EKQ", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität"]
+    k_string = k_strings[k_index]
+    übrige = 6-k_index
+    return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
 
 def setpreferences():
+
     showpreferences()
-    print("Sie können 100% auf die 6 verschiedenen Kennzahlen aufteilen:")
+    print("Es müssen 100% auf die 6 verschiedenen Kennzahlen aufgeteilt werden:")
 
-    new_weight_KGV = float(input("Wie viel Prozent des Scores soll das KGV ausmachen? "))
-    new_weight_BruttoMarge = float(input("Wie viel Prozent des Scores soll die Bruttomarge ausmachen? "))
-    new_weight_EKQ = float(input("Wie viel Prozent des Scores soll die Eigenkapitalquote ausmachen? "))
-    new_weight_Dividendenrendite = float(input("Wie viel Prozent des Scores soll die Dividendenrendite ausmachen? "))
-    new_weight_Umsatz = float(input("Wie viel Prozent des Scores soll der Umsatz ausmachen? "))
-    new_weight_Aktienliquidität = float(input("Wie viel Prozent des Scores soll die Aktienliquidität ausmachen? "))
+    total = 100.0
+    new_weights = [0,0,0,0,0,0]
+    i = 0
 
-    if new_weight_KGV+new_weight_BruttoMarge+new_weight_EKQ+new_weight_Dividendenrendite+new_weight_Umsatz+new_weight_Aktienliquidität == 100.0:
+    while i < 6:
+        try:
+            new_weights[i] = float(input(askforpref(i, total)))
+            total -= new_weights[i]
+            i += 1
+        except:
+            print("\nGeben Sie bitte eine ZAHL ein.\n")
+            
+
+    if  sum(new_weights) == 100:
         global weight_KGV
         global weight_BruttoMarge
         global weight_EKQ
@@ -221,15 +250,17 @@ def setpreferences():
         global weight_Umsatz
         global weight_Aktienliquidität
 
-        weight_KGV = new_weight_KGV/100
-        weight_BruttoMarge = new_weight_BruttoMarge/100
-        weight_EKQ = new_weight_EKQ/100
-        weight_Dividendenrendite = new_weight_Dividendenrendite/100
-        weight_Umsatz = new_weight_Umsatz/100
-        weight_Aktienliquidität = new_weight_Aktienliquidität/100
+        weight_KGV = new_weights[0]/100
+        weight_BruttoMarge = new_weights[1]/100
+        weight_EKQ = new_weights[2]/100
+        weight_Dividendenrendite = new_weights[3]/100
+        weight_Umsatz = new_weights[4]/100
+        weight_Aktienliquidität = new_weights[5]/100
+
+        print("")
 
     else:
-        print("Die Summe ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.")
+        print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
 weight_KGV = 1/6
@@ -239,8 +270,7 @@ weight_Dividendenrendite = 1/6
 weight_Umsatz = 1/6
 weight_Aktienliquidität = 1/6
 
-
-
+running = True
 
 try:
 
@@ -248,7 +278,7 @@ try:
 (was gut und was schlecht ist) sieht große, nicht zu hoch bewertete Unternehmen mit hoher Dividendenrendite als ideal an. \nDer höchste Score liegt bei 800.
 Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
-    while True:
+    while running == True:
 
         input_main = input("<§> ")
 
@@ -264,12 +294,15 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
-                    rate(input_main[1])
+                    print(rate(input_main[1]))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
 
             elif input_main[0] == "hilfe":
                 helppage()
+
+            elif input_main[0] == "ende":
+                running = False
 
             else:
                 print('Unbekannter Befehl. Geben Sie "hilfe" ein, um die Anleitung angezeigt zu bekommen.' )
