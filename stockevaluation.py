@@ -77,13 +77,13 @@ def rate(ticker):
         nomUmsatz=round(revenue/1000000,2)
 
 
-        print(f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+        return f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
 Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
 Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
 Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
 Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
 Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}""")
+KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}"""
         
 
     except:
@@ -262,6 +262,19 @@ def setpreferences():
     else:
         print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
 
+def info(ticker):
+
+    profile = fa.profile(ticker, api_key)[0]
+
+    name = profile["companyName"]
+    exchangeShortName = profile["exchangeShortName"]
+    sector = profile["sector"]
+    description = profile["description"]
+    fullTimeEmployees = profile["fullTimeEmployees"]
+    ceo = profile["ceo"]
+    address = profile["address"]
+
+    return name, exchangeShortName, sector, description, fullTimeEmployees, ceo, address
 
 weight_KGV = 1/6
 weight_BruttoMarge = 1/6
@@ -297,6 +310,12 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
                     print(rate(input_main[1]))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
+
+            elif input_main[0] == "info":
+                if len(input_main) == 2:
+                    print(info(input_main[1]))
+                else:
+                    print('Geben Sie EIN Ticker Symbol hinter "info" ein.')
 
             elif input_main[0] == "hilfe":
                 helppage()
