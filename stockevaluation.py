@@ -20,40 +20,52 @@ def rate(ticker):
 
     try:
         quote = fa.quote(ticker, api_key)[0] 
-        income = fa.income_statement(ticker, api_key, period="annual").iloc[:,0] 
+        incomeall = fa.income_statement(ticker, api_key, period="annual")
+        incomevor0 = incomeall.iloc[:,0] 
+        incomevor1 = incomeall.iloc[:,1]
+        incomevor3 = incomeall.iloc[:,3]
         balance = fa.balance_sheet_statement(ticker, api_key, period="annual").iloc[:,0]
         cashflow = fa.cash_flow_statement(ticker, api_key, period="annual").iloc[:,0]
-        
-        statement_currency = income["reportedCurrency"]
+        DCF = fa.discounted_cash_flow(ticker, api_key).iloc[:,0]
+
+        statement_currency = incomevor0["reportedCurrency"]
         quote_currency = "USD" 
 
         if statement_currency not in exchange_rates.body["rates"]:
             return "Error: Die Zahlen der angegebenen Aktie sind in einer unbekannten Währung angegeben."
-
-        if type(quote["pe"]) == float or type(quote["pe"]) == int:
-            KGV = quote["pe"]
-            KGVScore=rateKGV(KGV)*weight_KGV*100
-
-        else:
-            return "Error: Die angegebene Aktie hat kein KGV. Versuchen Sie eine andere Aktie, wie z.B. AAPL oder AMZN."
-
-        grossProfit = Euro(income["grossProfit"], statement_currency)         
-        revenue = Euro(income["revenue"], statement_currency) 
+            
+        
+        ebitda = Euro(incomevor0["ebitda"], statement_currency)  
+        ebitdavor1 = Euro(incomevor1["ebitda"], statement_currency)
+        ebitdavor3 = Euro(incomevor3["ebitda"], statement_currency)       
+        revenue = Euro(incomevor0["revenue"], statement_currency) 
         volume = quote["volume"]
+        incomevor1day = incomevor1["acceptedDate"].split()[0]
         price = Euro(quote["price"], quote_currency)
+        pricevor1 = Euro(fa.stock_data_detailed(ticker, api_key, begin= incomevor1day, end = incomevor1day).iloc[0][0], quote_currency)
         dividendsPaid = Euro(cashflow["dividendsPaid"], statement_currency)
         sharesOutstanding = quote["sharesOutstanding"]
         totalAssets = Euro(balance["totalAssets"], statement_currency)
         totalLiabilities = Euro(balance["totalLiabilities"], statement_currency)
+        stockprice = Euro(DCF["Stock Price"], quote_currency)
+        dcf = Euro(DCF["DCF"], quote_currency)
+        ebitdaratio = Euro(incomevor0["ebitdaratio"], statement_currency)
+        eps = Euro(incomevor0["eps"], statement_currency)
 
-
-        MargeScore=rateMarge(grossProfit, revenue)*weight_BruttoMarge*100
+        MargeScore=rateMarge(ebitdaratio)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
         DividendyieldScore=rateDividenyield(dividendsPaid, sharesOutstanding, price)*weight_Dividendenrendite*100
         UmsatzScore=rateUmsatz(revenue)*weight_Umsatz*100
         EKQScore=rateEKQ(totalAssets,totalLiabilities)*weight_EKQ*100
+        KGVScore=rateKGV(price,eps)*weight_KGV*100
+        DCFScore=rateDCFV(stockprice,dcf)*weight_DCFV*100
+        GewinnwachstumScore=rateGewinnwachstum(ebitda, ebitdavor3)*weight_Gewinnwachstum*100
+        KWGWVScore=rateKWGWV(price, pricevor1, ebitda, ebitdavor1)*weight_KWGWV*100
+        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps)*weight_PoR*100
 
-        Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore,2)
+
+
+        Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
 
         ScoreMargeRound=round(MargeScore,2)
         ScoreLiquidityRound=round(LiquidityScore,2)
@@ -61,36 +73,57 @@ def rate(ticker):
         ScoreUmsatzRound=round(UmsatzScore,2)
         ScoreEKQRound=round(EKQScore,2)
         ScoreKGVRound=round(KGVScore,2)
- 
+        ScoreDCFRound=round(DCFScore,2)
+        ScoreGewinnwachstumRound=round(GewinnwachstumScore,2)
+        ScoreKWGWVRound=round(KWGWVScore,2)
+        ScorePayoutRatioRound=round( PayoutRatioScore,2)
+
+
         maxMarge=round(weight_BruttoMarge*800,2)
         maxLiquidity=round(weight_Aktienliquidität*800,2)
         maxDividendyield=round(weight_Dividendenrendite*800,2)
         maxEKQ=round(weight_EKQ*800,2)
         maxKGV=round(weight_KGV*800,2)
         maxUmsatz=round(weight_Umsatz*800,2)
+        maxDCF=round(weight_DCFV*800,2)
+        maxGewinnwachstum=round(weight_Gewinnwachstum*800,2)
+        maxKWGWV=round(weight_KWGWV*800,2)
+        maxPayoutRatio=round(weight_PoR*800,2)
 
-        nomMarge=round(grossProfit/revenue*100,3)
+
+        nomMarge=round(ebitdaratio*100,3)
         nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,3)
         nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,3)
-        nomKGV=round(KGV,2)
+        nomKGV=round(price/eps,2)
         nomLiquidity=round(volume*price/1000000,2)
         nomUmsatz=round(revenue/1000000,2)
+        nomDCF=round(dcf/stockprice,2)
+        nomGewinnwachstum=round((((ebitda-ebitdavor3)/ebitdavor3)/3)*100,2)
+        nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
+        nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
 
-        return f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
+
+
+        return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+Ebitda-Marge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
 Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
 Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
 Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
 Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}"""
+KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
+DCF-Kurs-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
+Gewinnwachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
+Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
         
 
     except:
-        print("Ein Fehler ist aufgetreten.")
+        return "Ein Fehler ist aufgetreten."
 
 
-def rateKGV(KGV):
+def rateKGV(price, eps):  
+    KGV=price/eps
     schwellenwerte=[300, 70, 40, 25, 15, 10]
 
     if KGV<=0:
@@ -106,14 +139,13 @@ def rateKGV(KGV):
 
     return(score)
 
-def rateMarge(gewinn, umsatz):
-    Marge=gewinn/umsatz
-    schwellenwerte=[0.02,0.05,0.1,0.15,0.2,0.3,0.5]
+def rateMarge(Marge): 
+    schwellenwerte=[0.01,0.05,0.075,0.1,0.15,0.25,0.35]
     
-    if Marge<0.02:
+    if Marge<0.01:
         return 1
         
-    elif Marge>=0.5:
+    elif Marge>=0.35:
         return 8
         
     else:
@@ -203,37 +235,128 @@ def rateEKQ(assets, liabilities):
 
     return(score)
 
+def rateDCFV(stockprice, dcf):
+    DCFV = dcf/stockprice
+    schwellenwerte=[2 ,1.75, 1.5, 1.25, 1, 0.8, 0.6, 0.4]
 
+    if DCFV>=2.5:
+        return 1
 
-def showpreferences():
+    elif DCFV<=0.4:
+        return 8
+
+    else:
+        score=2
+        i=0
+
+        while DCFV<schwellenwerte[i]:
+            score +=1
+            i+=1
+
+    return score
+
+def rateGewinnwachstum(gewinn, gewinnvor3):  
+    GewinnWachstum=((gewinn-gewinnvor3)/gewinnvor3)/3
+    schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55,]
+    
+    if GewinnWachstum<=0:
+        return 1
+
+    elif GewinnWachstum>0.55:
+        return 8
+
+    else:
+        score=1
+        i=0
+
+        while GewinnWachstum>=schwellenwerte[i]:
+            score+=1
+            i+=1
+
+    return(score)
+
+def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
+    KW=(price-pricevor1)/pricevor1
+    GW=(gewinn-gewinnvor1)/gewinnvor1
+    KWGWV=KW/GW
+    schwellenwerte=[0.5,0.75,1,1.4,2,3,4]
+
+    if KWGWV>=4:
+        return 1
+
+    elif KWGWV<=0.5:
+        return 8
+
+    else:
+        score=8
+        i=0
+
+        while KWGWV>schwellenwerte[i]:
+            score-=1
+            i+=1
+
+    return(score)
+
+def ratePayoutRatio(dividendspaid,shares,eps):                  
+    dividenden=dividendspaid*(-1)
+    dps=dividenden/shares
+    PoR=dps/eps
+    schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
+    
+    if PoR>=0.8:
+        return 1
+
+    elif dividendspaid==0:
+        return 4
+        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.\n")
+        
+    elif PoR<=0.05:
+        return 8
+        
+    else:
+        score=8
+        i=0
+        
+        while PoR>schwellenwerte[i]:
+            score-=1
+            i+=1
+
+    return(score)                        
+
+def showpreferences():      
     print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
     print("KGV\t\t\t\t{0}%".format(weight_KGV*100))
-    print("Brutto-Marge\t\t\t{0}%".format(weight_BruttoMarge*100))
-    print("EKQ\t\t\t\t{0}%".format(weight_EKQ*100))
-    print("Dividenderendite\t\t{0}%".format(weight_Dividendenrendite*100))
+    print("Ebitda-Marge\t\t\t{0}%".format(weight_BruttoMarge*100))
+    print("Eigenkapitalquote\t\t{0}%".format(weight_EKQ*100))
+    print("Dividendenrendite\t\t{0}%".format(weight_Dividendenrendite*100))
     print("Umsatz\t\t\t\t{0}%".format(weight_Umsatz*100))
-    print("Aktienliquidität\t\t{0}%\n".format(weight_Aktienliquidität*100))
+    print("Aktienliquidität\t\t{0}%".format(weight_Aktienliquidität*100))
+    print("DCF-zu-Kurs-Verhältnis\t\t{0}%".format(weight_DCFV*100))
+    print("Gewinnwachstum\t\t\t{0}%".format(weight_Gewinnwachstum*100))
+    print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_Gewinnwachstum*100))
+    print("Payout-Ratio\t\t\t{0}%\n".format(weight_PoR*100))
+
 
 def helppage():
-    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetprefernces\t\t\t\t-Kennzahlen gewichten\nshowpreferences\t\t\t\t-aktuelle Gewichtung anzeigen
-rate + <Ticker Symbol>\t\t\t-Rating durchführen\nSTRG + C\t\t\t\t-Programm beenden\n""")
+    print("""\nDas ist die Anleitung zu unserem Programm:\n\nset\t\t\t\t\t- Kennzahlen gewichten\nshow\t\t\t\t\t- aktuelle Gewichtung anzeigen
+rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
-    k_strings = ["der KGV", "die Brutto-Marge", "der EKQ", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität"]
+    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF","das Gewinnwachstum", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", ]
     k_string = k_strings[k_index]
-    übrige = 6-k_index
+    übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
 
 def setpreferences():
 
     showpreferences()
-    print("Es müssen 100% auf die 6 verschiedenen Kennzahlen aufgeteilt werden:")
+    print("Es müssen 100% auf die 10 verschiedenen Kennzahlen aufgeteilt werden:")
 
     total = 100.0
-    new_weights = [0,0,0,0,0,0]
+    new_weights = [0,0,0,0,0,0,0,0,0,0]
     i = 0
 
-    while i < 6:
+    while i < 10:
         try:
             new_weights[i] = float(input(askforpref(i, total)))
             total -= new_weights[i]
@@ -249,6 +372,10 @@ def setpreferences():
         global weight_Dividendenrendite
         global weight_Umsatz
         global weight_Aktienliquidität
+        global weight_DCFV 
+        global weight_KWGWV 
+        global weight_PoR 
+        global weight_Gewinnwachstum
 
         weight_KGV = new_weights[0]/100
         weight_BruttoMarge = new_weights[1]/100
@@ -256,6 +383,11 @@ def setpreferences():
         weight_Dividendenrendite = new_weights[3]/100
         weight_Umsatz = new_weights[4]/100
         weight_Aktienliquidität = new_weights[5]/100
+        weight_DCFV = new_weights[6]/100
+        weight_KWGWV = new_weights[7]/100
+        weight_PoR = new_weights[8]/100
+        weight_Gewinnwachstum = new_weights[9]/100
+
 
         print("")
 
@@ -264,24 +396,47 @@ def setpreferences():
 
 def info(ticker):
 
-    profile = fa.profile(ticker, api_key)[0]
+    try:
+        profile = fa.profile(ticker, api_key)[0]
 
-    name = profile["companyName"]
-    exchangeShortName = profile["exchangeShortName"]
-    sector = profile["sector"]
-    description = profile["description"]
-    fullTimeEmployees = profile["fullTimeEmployees"]
-    ceo = profile["ceo"]
-    address = profile["address"]
+        symbol = ticker
+        name = profile["companyName"]
+        exchangeShortName = profile["exchangeShortName"]
+        sector = profile["sector"]
+        fullTimeEmployees = profile["fullTimeEmployees"]
+        ceo = profile["ceo"]
+        address = profile["address"]
+        city = profile["city"]
+        state = profile["state"]
+        country = profile["country"]
+        ipo = profile["ipoDate"].split("-")
+        ipoYear = ipo[0]
+        ipoMonth = ipo[1]
+        ipoDay = ipo[2]
 
-    return name, exchangeShortName, sector, description, fullTimeEmployees, ceo, address
+        return f"""\nTicker\t\t\t\t{symbol}
+Name\t\t\t\t{name}
+Exchange\t\t\t{exchangeShortName}
+Sektor\t\t\t\t{sector}
+Mitarbeiter\t\t\t{fullTimeEmployees}
+CEO\t\t\t\t{ceo}
+Adresse\t\t\t\t{address}
+Stadt\t\t\t\t{city}, {state}, {country}
+Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
-weight_KGV = 1/6
-weight_BruttoMarge = 1/6
-weight_EKQ = 1/6
-weight_Dividendenrendite = 1/6
-weight_Umsatz = 1/6
-weight_Aktienliquidität = 1/6
+    except:
+        return "Ein Fehler ist aufgetreten."
+
+weight_KGV = 1/10
+weight_BruttoMarge = 1/10
+weight_EKQ = 1/10
+weight_Dividendenrendite = 1/10
+weight_Umsatz = 1/10
+weight_Aktienliquidität = 1/10
+weight_DCFV = 1/10
+weight_KWGWV = 1/10
+weight_PoR = 1/10
+weight_Gewinnwachstum = 1/10
 
 running = True
 
@@ -299,10 +454,10 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             input_main = input_main.split()
 
-            if input_main[0] == "setpreferences" and len(input_main) == 1:
+            if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
 
-            elif input_main[0] == "showpreferences" and len(input_main) == 1:
+            elif input_main[0] == "show" and len(input_main) == 1:
                 showpreferences()
 
             elif input_main[0] == "rate":
