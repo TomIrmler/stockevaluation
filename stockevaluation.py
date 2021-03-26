@@ -1,9 +1,9 @@
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
-api_key = 'APIKEY'
+api_key = '2355734d1486c0599f415923d59c1387'
 
-oxr.app_id = "APPID" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.
+oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.
 exchange_rates = oxr.Latest().get()
 
 def Euro(Wert, Währung):
@@ -46,18 +46,49 @@ def rate(ticker):
         totalAssets = Euro(balance["totalAssets"], statement_currency)
         totalLiabilities = Euro(balance["totalLiabilities"], statement_currency)
 
+
         MargeScore=rateMarge(grossProfit, revenue)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
         DividendyieldScore=rateDividenyield(dividendsPaid, sharesOutstanding, price)*weight_Dividendenrendite*100
         UmsatzScore=rateUmsatz(revenue)*weight_Umsatz*100
         EKQScore=rateEKQ(totalAssets,totalLiabilities)*weight_EKQ*100
 
-        Gesamtscore= KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore
+        Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore,2)
 
-        return Gesamtscore
+        ScoreMargeRound=round(MargeScore,2)
+        ScoreLiquidityRound=round(LiquidityScore,2)
+        ScoreDividendyieldRound=round(DividendyieldScore,2)
+        ScoreUmsatzRound=round(UmsatzScore,2)
+        ScoreEKQRound=round(EKQScore,2)
+        ScoreKGVRound=round(KGVScore,2)
+ 
+        maxMarge=round(weight_BruttoMarge*800,2)
+        maxLiquidity=round(weight_Aktienliquidität*800,2)
+        maxDividendyield=round(weight_Dividendenrendite*800,2)
+        maxEKQ=round(weight_EKQ*800,2)
+        maxKGV=round(weight_KGV*800,2)
+        maxUmsatz=round(weight_Umsatz*800,2)
+
+        nomMarge=round(grossProfit/revenue*100,3)
+        nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,3)
+        nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,3)
+        nomKGV=round(KGV,2)
+        nomLiquidity=round(volume*price/1000000,2)
+        nomUmsatz=round(revenue/1000000,2)
+
+
+        print(f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}""")
+        
 
     except:
-        return "Ein Fehler ist aufgetreten."
+        print("Ein Fehler ist aufgetreten.")
+
 
 def rateKGV(KGV):
     schwellenwerte=[300, 70, 40, 25, 15, 10]
@@ -76,22 +107,22 @@ def rateKGV(KGV):
     return(score)
 
 def rateMarge(gewinn, umsatz):
-	Marge=gewinn/umsatz
-	schwellenwerte=[0.01,0.03,0.05,0.07,0.1,0.15,0.2]
-
-	if Marge<0.01:
-		return 1
-
-	elif Marge>=0.2:
-		return 8
-
-	else:
-		score=1
-		i=0
-		while Marge>=schwellenwerte[i]:
-			score+=1
-			i+=1
-	return(score)
+    Marge=gewinn/umsatz
+    schwellenwerte=[0.02,0.05,0.1,0.15,0.2,0.3,0.5]
+    
+    if Marge<0.02:
+        return 1
+        
+    elif Marge>=0.5:
+        return 8
+        
+    else:
+        score=1
+        i=0
+        while Marge>=schwellenwerte[i]:
+            score+=1
+            i+=1
+    return(score)
 
 def rateLiquidity(volume, price):
 
@@ -152,7 +183,8 @@ def rateUmsatz(umsatz):
 	return(score)
 
 def rateEKQ(assets, liabilities):
-    EKQ=assets-liabilities
+
+    EKQ=(assets-liabilities)/assets
     schwellenwerte=[0.02,0.1,0.2,0.3,0.4,0.6,0.8]
 
     if EKQ<0.02:
@@ -207,7 +239,7 @@ def setpreferences():
             total -= new_weights[i]
             i += 1
         except:
-            print("\nGeben sie bitte eine ZAHL ein.\n")
+            print("\nGeben Sie bitte eine ZAHL ein.\n")
             
 
     if  sum(new_weights) == 100:
@@ -228,7 +260,7 @@ def setpreferences():
         print("")
 
     else:
-        print("Die Summe ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
+        print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
 weight_KGV = 1/6
@@ -239,7 +271,6 @@ weight_Umsatz = 1/6
 weight_Aktienliquidität = 1/6
 
 running = True
-
 
 try:
 
