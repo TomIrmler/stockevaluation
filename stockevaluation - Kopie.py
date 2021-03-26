@@ -1,6 +1,6 @@
 import FundamentalAnalysis as fa
 
-api_key = 'APIKEY'
+api_key = '2355734d1486c0599f415923d59c1387'
 
 def rate(ticker):
 
@@ -36,36 +36,38 @@ def rate(ticker):
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore,2)
 
-        M=round(MargeScore,2)
-        L=round(LiquidityScore,2)
-        D=round(DividendyieldScore,2)
-        U=round(UmsatzScore,2)
-        E=round(EKQScore,2)
-        K=round(KGVScore,2)
-        wb=round(weight_BruttoMarge*800,2)
-        wl=round(weight_Aktienliquidität*800,2)
-        wd=round(weight_Dividendenrendite*800,2)
-        we=round(weight_EKQ*800,2)
-        wk=round(weight_KGV*800,2)
-        wu=round(weight_Umsatz*800,2)
-        Marge=round(grossProfit/revenue*100,3)
-        dividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,3)
-        EKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,3)
-        K=round(KGV,2)
-        Liquidität=round(volume*price/1000000,2)
-        Umsatz=round(revenue/1000000,2)
+        ScoreMargeRound=round(MargeScore,2)
+        ScoreLiquidityRound=round(LiquidityScore,2)
+        ScoreDividendyieldRound=round(DividendyieldScore,2)
+        ScoreUmsatzRound=round(UmsatzScore,2)
+        ScoreEKQRound=round(EKQScore,2)
+        ScoreKGVRound=round(KGVScore,2)
+
+        maxMarge=round(weight_BruttoMarge*800,2)
+        maxLiquidity=round(weight_Aktienliquidität*800,2)
+        maxDividendyield=round(weight_Dividendenrendite*800,2)
+        maxEKQ=round(weight_EKQ*800,2)
+        maxKGV=round(weight_KGV*800,2)
+        maxUmsatz=round(weight_Umsatz*800,2)
+
+        nomMarge=round(grossProfit/revenue*100,3)
+        nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,3)
+        nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,3)
+        nomKGV=round(KGV,2)
+        nomLiquidity=round(volume*price/1000000,2)
+        nomUmsatz=round(revenue/1000000,2)
 
     
 
 
         
         print(f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Bruttomarge ({Marge}%)\t\t\t{M} / {wb}
-Aktienliquidität ({Liquidität} mio)\t\t{L} / {wl}
-Dividendenrendite ({dividendyield}%)\t\t{D} / {wd}
-Umsatzgröße ({Umsatz} mio)\t\t{U} / {wu}
-Eigenkapitalquote ({EKQ}%)\t\t{E} / {we}
-KGV ({K})\t\t\t\t{K} / {wk}""")
+Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}""")
         
 
     except:
@@ -90,12 +92,12 @@ def rateKGV(KGV):
 
 def rateMarge(gewinn, umsatz):
     Marge=gewinn/umsatz
-    schwellenwerte=[0.01,0.03,0.05,0.07,0.1,0.15,0.2]
+    schwellenwerte=[0.02,0.05,0.1,0.15,0.2,0.3,0.5]
     
-    if Marge<0.01:
+    if Marge<0.02:
         return 1
         
-    elif Marge>=0.2:
+    elif Marge>=0.5:
         return 8
         
     else:
@@ -197,19 +199,19 @@ def showpreferences():
     print("Aktienliquidität\t\t{0}%\n".format(weight_Aktienliquidität*100))
 
 def helppage():
-    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetprefernces\t\t-\t\tKennzahlen gewichten\nshowpreferences\t\t-\t\taktuelle Gewichtung anzeigen
-rate + <Ticker Symbol>\t-\t\tRating durchführen\nSTRG + C\t\t-\t\tProgramm beenden\n""")
+    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetpreferences\t\t- Kennzahlen gewichten\nshowpreferences\t\t- aktuelle Gewichtung anzeigen
+rate + <Ticker Symbol>\t- Rating durchführen\nSTRG + C\t\t- Programm beenden\n""")
 
 def setpreferences():
     showpreferences()
     print("Sie können 100% auf die 6 verschiedenen Kennzahlen aufteilen:")
 
-    new_weight_KGV = float(input("Wie viel Prozent des Scores soll das KGV ausmachen?"))
-    new_weight_BruttoMarge = float(input("Wie viel Prozent des Scores soll die Brutto-Marge ausmachen?"))
-    new_weight_EKQ = float(input("Wie viel Prozent des Scores soll die Eigenkapitalquote ausmachen?"))
-    new_weight_Dividendenrendite = float(input("Wie viel Prozent des Scores soll die Dividendenrendite ausmachen?"))
-    new_weight_Umsatz = float(input("Wie viel Prozent des Scores soll der Umsatz ausmachen?"))
-    new_weight_Aktienliquidität = float(input("Wie viel Prozent des Scores soll die Aktienliquidität ausmachen?"))
+    new_weight_KGV = float(input("Wie viel Prozent des Scores soll das KGV ausmachen? "))
+    new_weight_BruttoMarge = float(input("Wie viel Prozent des Scores soll die Bruttomarge ausmachen? "))
+    new_weight_EKQ = float(input("Wie viel Prozent des Scores soll die Eigenkapitalquote ausmachen? "))
+    new_weight_Dividendenrendite = float(input("Wie viel Prozent des Scores soll die Dividendenrendite ausmachen? "))
+    new_weight_Umsatz = float(input("Wie viel Prozent des Scores soll der Umsatz ausmachen? "))
+    new_weight_Aktienliquidität = float(input("Wie viel Prozent des Scores soll die Aktienliquidität ausmachen? "))
 
     if new_weight_KGV+new_weight_BruttoMarge+new_weight_EKQ+new_weight_Dividendenrendite+new_weight_Umsatz+new_weight_Aktienliquidität == 100.0:
         global weight_KGV
