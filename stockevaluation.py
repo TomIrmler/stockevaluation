@@ -1,6 +1,6 @@
 import FundamentalAnalysis as fa
 
-api_key = 'APIKEY'
+api_key = '2355734d1486c0599f415923d59c1387'
 
 def rate(ticker):
 
@@ -9,6 +9,7 @@ def rate(ticker):
         income = fa.income_statement(ticker, api_key, period="annual")
         balance = fa.balance_sheet_statement(ticker, api_key, period="annual")
         cashflow = fa.cash_flow_statement(ticker, api_key, period="annual")
+
 
         if type(quote[0]["pe"]) == float or type(quote[0]["pe"]) == int:
             KGV = quote[0]["pe"]
@@ -26,18 +27,52 @@ def rate(ticker):
         totalAssets = balance["2020"]["totalAssets"]
         totalLiabilities = balance["2020"]["totalLiabilities"]
 
+
         MargeScore=rateMarge(grossProfit, revenue)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
         DividendyieldScore=rateDividenyield(dividendsPaid, sharesOutstanding, price)*weight_Dividendenrendite*100
         UmsatzScore=rateUmsatz(revenue)*weight_Umsatz*100
         EKQScore=rateEKQ(totalAssets,totalLiabilities)*weight_EKQ*100
 
-        Gesamtscore= KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore
+        Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore,2)
 
-        return Gesamtscore
+        ScoreMargeRound=round(MargeScore,2)
+        ScoreLiquidityRound=round(LiquidityScore,2)
+        ScoreDividendyieldRound=round(DividendyieldScore,2)
+        ScoreUmsatzRound=round(UmsatzScore,2)
+        ScoreEKQRound=round(EKQScore,2)
+        ScoreKGVRound=round(KGVScore,2)
+
+        maxMarge=round(weight_BruttoMarge*800,2)
+        maxLiquidity=round(weight_Aktienliquidität*800,2)
+        maxDividendyield=round(weight_Dividendenrendite*800,2)
+        maxEKQ=round(weight_EKQ*800,2)
+        maxKGV=round(weight_KGV*800,2)
+        maxUmsatz=round(weight_Umsatz*800,2)
+
+        nomMarge=round(grossProfit/revenue*100,3)
+        nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,3)
+        nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,3)
+        nomKGV=round(KGV,2)
+        nomLiquidity=round(volume*price/1000000,2)
+        nomUmsatz=round(revenue/1000000,2)
+
+    
+
+
+        
+        print(f"""Der Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+Bruttomarge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio)\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}""")
+        
 
     except:
-        return "Ein Fehler ist aufgetreten."
+        print("Ein Fehler ist aufgetreten.")
+
 
 def rateKGV(KGV):
     schwellenwerte=[300, 70, 40, 25, 15, 10]
@@ -56,22 +91,22 @@ def rateKGV(KGV):
     return(score)
 
 def rateMarge(gewinn, umsatz):
-	Marge=gewinn/umsatz
-	schwellenwerte=[0.01,0.03,0.05,0.07,0.1,0.15,0.2]
-
-	if Marge<0.01:
-		return 1
-
-	elif Marge>=0.2:
-		return 8
-
-	else:
-		score=1
-		i=0
-		while Marge>=schwellenwerte[i]:
-			score+=1
-			i+=1
-	return(score)
+    Marge=gewinn/umsatz
+    schwellenwerte=[0.02,0.05,0.1,0.15,0.2,0.3,0.5]
+    
+    if Marge<0.02:
+        return 1
+        
+    elif Marge>=0.5:
+        return 8
+        
+    else:
+        score=1
+        i=0
+        while Marge>=schwellenwerte[i]:
+            score+=1
+            i+=1
+    return(score)
 
 def rateLiquidity(volume, price):
 
@@ -132,7 +167,8 @@ def rateUmsatz(umsatz):
 	return(score)
 
 def rateEKQ(assets, liabilities):
-    EKQ=assets-liabilities
+
+    EKQ=(assets-liabilities)/assets
     schwellenwerte=[0.02,0.1,0.2,0.3,0.4,0.6,0.8]
 
     if EKQ<0.02:
@@ -151,6 +187,8 @@ def rateEKQ(assets, liabilities):
 
     return(score)
 
+
+
 def showpreferences():
     print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
     print("KGV\t\t\t\t{0}%".format(weight_KGV*100))
@@ -161,19 +199,19 @@ def showpreferences():
     print("Aktienliquidität\t\t{0}%\n".format(weight_Aktienliquidität*100))
 
 def helppage():
-    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetprefernces\t\t-\t\tKennzahlen gewichten\nshowpreferences\t\t-\t\taktuelle Gewichtung anzeigen
-rate + <Ticker Symbol>\t-\t\tRating durchführen\nSTRG + C\t\t-\t\tProgramm beenden\n""")
+    print("""\nDas ist die Anleitung zu unserem Programm:\n\nsetpreferences\t\t- Kennzahlen gewichten\nshowpreferences\t\t- aktuelle Gewichtung anzeigen
+rate + <Ticker Symbol>\t- Rating durchführen\nSTRG + C\t\t- Programm beenden\n""")
 
 def setpreferences():
     showpreferences()
     print("Sie können 100% auf die 6 verschiedenen Kennzahlen aufteilen:")
 
-    new_weight_KGV = float(input("Wie viel Prozent des Scores soll der KGV ausmachen?"))
-    new_weight_BruttoMarge = float(input("Wie viel Prozent des Scores soll die Brutto-Marge ausmachen?"))
-    new_weight_EKQ = float(input("Wie viel Prozent des Scores soll der EKQ ausmachen?"))
-    new_weight_Dividendenrendite = float(input("Wie viel Prozent des Scores soll die Dividendenrendite ausmachen?"))
-    new_weight_Umsatz = float(input("Wie viel Prozent des Scores soll der Umsatz ausmachen?"))
-    new_weight_Aktienliquidität = float(input("Wie viel Prozent des Scores soll die Aktienliquidität ausmachen?"))
+    new_weight_KGV = float(input("Wie viel Prozent des Scores soll das KGV ausmachen? "))
+    new_weight_BruttoMarge = float(input("Wie viel Prozent des Scores soll die Bruttomarge ausmachen? "))
+    new_weight_EKQ = float(input("Wie viel Prozent des Scores soll die Eigenkapitalquote ausmachen? "))
+    new_weight_Dividendenrendite = float(input("Wie viel Prozent des Scores soll die Dividendenrendite ausmachen? "))
+    new_weight_Umsatz = float(input("Wie viel Prozent des Scores soll der Umsatz ausmachen? "))
+    new_weight_Aktienliquidität = float(input("Wie viel Prozent des Scores soll die Aktienliquidität ausmachen? "))
 
     if new_weight_KGV+new_weight_BruttoMarge+new_weight_EKQ+new_weight_Dividendenrendite+new_weight_Umsatz+new_weight_Aktienliquidität == 100.0:
         global weight_KGV
@@ -208,7 +246,7 @@ try:
 
     print("""\n\nDer Aktienbewerter bewertet eine Aktie nach personalisiert gewichtbaren Kennzahlen. Die Interpretation dieser Kennzahlen
 (was gut und was schlecht ist) sieht große, nicht zu hoch bewertete Unternehmen mit hoher Dividendenrendite als ideal an. \nDer höchste Score liegt bei 800.
-Tippen Sie 'hilfe', um eine Uebersicht aller Befehle zu erhalten.\n""")
+Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
     while True:
 
@@ -226,7 +264,7 @@ Tippen Sie 'hilfe', um eine Uebersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
-                    print(rate(input_main[1]))
+                    rate(input_main[1])
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
 
