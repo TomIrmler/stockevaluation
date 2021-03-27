@@ -1,9 +1,9 @@
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
-api_key = ''	#apiKey muss noch eingefügt werden
+api_key = '' #apikey noch einfügen
 
-oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.	apiKey noch einfügen
+oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
 exchange_rates = oxr.Latest().get()
 
 def Euro(Wert, Währung):
@@ -113,7 +113,7 @@ Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
 Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
 KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
 DCF-Kurs-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
-Gewinnwachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
         
@@ -306,11 +306,14 @@ def ratePayoutRatio(dividendspaid,shares,eps):
     if PoR>=0.8:
         return 1
 
+    elif PoR<=0:
+        return 1
+
     elif dividendspaid==0:
-        return 4
         print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.\n")
-        
-    elif PoR<=0.05:
+        return 4
+
+    elif PoR<=0.05 and PoR>0:
         return 8
         
     else:
@@ -342,7 +345,7 @@ def helppage():
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
-    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF","das Gewinnwachstum", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", ]
+    k_strings = ["das KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF","das Gewinnwachstum", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
