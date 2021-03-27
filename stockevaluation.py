@@ -1,9 +1,9 @@
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
-api_key = '2355734d1486c0599f415923d59c1387'
+api_key = ''	#apiKey muss noch eingefügt werden
 
-oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.
+oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.	apiKey noch einfügen
 exchange_rates = oxr.Latest().get()
 
 def Euro(Wert, Währung):
