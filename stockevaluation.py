@@ -345,7 +345,7 @@ def helppage():
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
-    k_strings = ["das KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF","das Gewinnwachstum", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", ]
+    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
