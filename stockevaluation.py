@@ -1,9 +1,9 @@
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
-api_key = ''	#apiKey muss noch eingefügt werden
+api_key = " " #apikey noch einfügen
 
-oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.	apiKey noch einfügen
+oxr.app_id = " " #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
 exchange_rates = oxr.Latest().get()
 
 def Euro(Wert, Währung):
@@ -112,8 +112,8 @@ Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDivi
 Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
 Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
 KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
-DCF-Kurs-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
-Gewinnwachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Kurs-DCF-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
+Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
         
@@ -124,7 +124,7 @@ Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio
 
 def rateKGV(price, eps):  
     KGV=price/eps
-    schwellenwerte=[300, 70, 40, 25, 15, 10]
+    schwellenwerte=[300, 70, 40, 25, 15, 10, 0]
 
     if KGV<=0:
         return 1
@@ -236,20 +236,20 @@ def rateEKQ(assets, liabilities):
     return(score)
 
 def rateDCFV(stockprice, dcf):
-    DCFV = dcf/stockprice
-    schwellenwerte=[2 ,1.75, 1.5, 1.25, 1, 0.8, 0.6, 0.4]
+    DCFV = stockprice/dcf
+    schwellenwerte=[1.5 ,1.3, 1.15, 1.075, 1, 0.9, 0.7, 0.4]
 
-    if DCFV>=2.5:
+    if DCFV>=1.5:
         return 1
 
     elif DCFV<=0.4:
         return 8
 
     else:
-        score=2
+        score=1
         i=0
 
-        while DCFV<schwellenwerte[i]:
+        while DCFV<=schwellenwerte[i]:
             score +=1
             i+=1
 
@@ -257,12 +257,12 @@ def rateDCFV(stockprice, dcf):
 
 def rateGewinnwachstum(gewinn, gewinnvor3):  
     GewinnWachstum=((gewinn-gewinnvor3)/gewinnvor3)/3
-    schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55,]
+    schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55]
     
     if GewinnWachstum<=0:
         return 1
 
-    elif GewinnWachstum>0.55:
+    elif GewinnWachstum>=0.55:
         return 8
 
     else:
@@ -303,14 +303,16 @@ def ratePayoutRatio(dividendspaid,shares,eps):
     PoR=dps/eps
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
-    if PoR>=0.8:
+    if dividendspaid==0:
+        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
+        return 4
+    elif PoR>=0.8:
         return 1
 
-    elif dividendspaid==0:
-        return 4
-        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.\n")
-        
-    elif PoR<=0.05:
+    elif PoR<0:
+        return 1 
+
+    elif PoR<=0.05 and PoR>0:
         return 8
         
     else:
@@ -321,7 +323,8 @@ def ratePayoutRatio(dividendspaid,shares,eps):
             score-=1
             i+=1
 
-    return(score)                        
+    return(score)    
+
 
 def showpreferences():      
     print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
@@ -331,7 +334,7 @@ def showpreferences():
     print("Dividendenrendite\t\t{0}%".format(weight_Dividendenrendite*100))
     print("Umsatz\t\t\t\t{0}%".format(weight_Umsatz*100))
     print("Aktienliquidität\t\t{0}%".format(weight_Aktienliquidität*100))
-    print("DCF-zu-Kurs-Verhältnis\t\t{0}%".format(weight_DCFV*100))
+    print("Kurs-zu-DCF-Verhältnis\t\t{0}%".format(weight_DCFV*100))
     print("Gewinnwachstum\t\t\t{0}%".format(weight_Gewinnwachstum*100))
     print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_Gewinnwachstum*100))
     print("Payout-Ratio\t\t\t{0}%\n".format(weight_PoR*100))
@@ -342,7 +345,8 @@ def helppage():
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
-    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
+
+    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "das Kurs-zu-DCF-Verhältnis", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
