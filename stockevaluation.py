@@ -112,7 +112,7 @@ Dividendenrendite ({nomdividendyield} %)\t\t{ScoreDividendyieldRound} / {maxDivi
 Umsatzgröße ({nomUmsatz} mio)\t\t{ScoreUmsatzRound} / {maxUmsatz}
 Eigenkapitalquote ({nomEKQ} %)\t\t{ScoreEKQRound} / {maxEKQ}
 KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
-DCF-Kurs-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
+Kurs-DCF-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
 Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum} %)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
@@ -236,20 +236,20 @@ def rateEKQ(assets, liabilities):
     return(score)
 
 def rateDCFV(stockprice, dcf):
-    DCFV = dcf/stockprice
-    schwellenwerte=[2 ,1.75, 1.5, 1.25, 1, 0.8, 0.6, 0.4]
+    DCFV = stockprice/dcf
+    schwellenwerte=[1.5 ,1.3, 1.15, 1.075, 1, 0.9, 0.7, 0.4]
 
-    if DCFV>=2.5:
+    if DCFV>=1.5:
         return 1
 
     elif DCFV<=0.4:
         return 8
 
     else:
-        score=2
+        score=1
         i=0
 
-        while DCFV<schwellenwerte[i]:
+        while DCFV<=schwellenwerte[i]:
             score +=1
             i+=1
 
@@ -334,7 +334,7 @@ def showpreferences():
     print("Dividendenrendite\t\t{0}%".format(weight_Dividendenrendite*100))
     print("Umsatz\t\t\t\t{0}%".format(weight_Umsatz*100))
     print("Aktienliquidität\t\t{0}%".format(weight_Aktienliquidität*100))
-    print("DCF-zu-Kurs-Verhältnis\t\t{0}%".format(weight_DCFV*100))
+    print("Kurs-zu-DCF-Verhältnis\t\t{0}%".format(weight_DCFV*100))
     print("Gewinnwachstum\t\t\t{0}%".format(weight_Gewinnwachstum*100))
     print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_Gewinnwachstum*100))
     print("Payout-Ratio\t\t\t{0}%\n".format(weight_PoR*100))
@@ -345,7 +345,7 @@ def helppage():
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
-    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "der DCF", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
+    k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "das Kurs-zu-DCF-Verhältnis", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
