@@ -5,5 +5,5 @@ Der Aktienbewerter bewertet eine Aktie nach personalisiert gewichtbaren Kennzahl
 Der höchste Score liegt bei 800.
 
 
-Für das Benutzen des Programms müssen Sie über den pip-Installer die Libaries FundamentalAnalysis (*pip install FundamentalAnalysis*) und coinoxr (*pip install coinoxr*).
+Für das Benutzen des Programms müssen Sie über den pip-Installer die Libaries FundamentalAnalysis (*pip install FundamentalAnalysis*) und coinoxr (*pip install coinoxr*) installieren.
 
