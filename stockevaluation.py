@@ -124,7 +124,7 @@ Payout-Ratio ({nomPayoutRatio} %)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio
 
 def rateKGV(price, eps):  
     KGV=price/eps
-    schwellenwerte=[300, 70, 40, 25, 15, 10]
+    schwellenwerte=[300, 70, 40, 25, 15, 10, 0]
 
     if KGV<=0:
         return 1
