@@ -303,15 +303,14 @@ def ratePayoutRatio(dividendspaid,shares,eps):
     PoR=dps/eps
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
-    if PoR>=0.8:
-        return 1
-
-    elif PoR<=0:
-        return 1
-
-    elif dividendspaid==0:
+    if dividendspaid==0:
         print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.\n")
         return 4
+    elif PoR>=0.8:
+        return 1
+
+    elif PoR<0:
+        return 1 
 
     elif PoR<=0.05 and PoR>0:
         return 8
@@ -324,7 +323,8 @@ def ratePayoutRatio(dividendspaid,shares,eps):
             score-=1
             i+=1
 
-    return(score)                        
+    return(score)    
+
 
 def showpreferences():      
     print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
