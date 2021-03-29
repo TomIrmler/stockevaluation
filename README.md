@@ -13,7 +13,7 @@ Eine Anleitung des Programms ist im Programm selbst zu finden.
 
 **kurze Erklärung der verwendeten Kennzahlen:**
 
-<h1>KGV:<\h1> <br>
+<h1>KGV:</h1> <br>
 Kurs-Gewinn-Verhältnis, setzt den Kurs eines Unternehmens in Verhältnis zum Gewinn pro Aktie des vergangenen Geschäftsjahres.
 
 EBITDA-Marge:
