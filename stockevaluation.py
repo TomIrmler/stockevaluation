@@ -1,9 +1,9 @@
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
-api_key = '' #apikey noch einfügen
+api_key = " " #apikey noch einfügen
 
-oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
+oxr.app_id = " " #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
 exchange_rates = oxr.Latest().get()
 
 def Euro(Wert, Währung):
@@ -345,6 +345,7 @@ def helppage():
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 def askforpref(k_index, total):
+
     k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "das Kurs-zu-DCF-Verhältnis", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
