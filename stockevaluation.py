@@ -257,12 +257,12 @@ def rateDCFV(stockprice, dcf):
 
 def rateGewinnwachstum(gewinn, gewinnvor3):  
     GewinnWachstum=((gewinn-gewinnvor3)/gewinnvor3)/3
-    schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55,]
+    schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55]
     
     if GewinnWachstum<=0:
         return 1
 
-    elif GewinnWachstum>0.55:
+    elif GewinnWachstum>=0.55:
         return 8
 
     else:
