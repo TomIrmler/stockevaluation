@@ -304,7 +304,7 @@ def ratePayoutRatio(dividendspaid,shares,eps):
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
     if dividendspaid==0:
-        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.\n")
+        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
         return 4
     elif PoR>=0.8:
         return 1
