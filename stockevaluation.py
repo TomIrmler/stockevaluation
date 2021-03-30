@@ -1,3 +1,6 @@
+#Mehr Informationen auf https://github.com/TomIrmler/stockevaluation
+#Gruppenarbeit von Le, Caspar und Tom (11A)
+
 import FundamentalAnalysis as fa
 import coinoxr as oxr
 
