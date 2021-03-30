@@ -1,9 +1,12 @@
+#Mehr Informationen auf https://github.com/TomIrmler/stockevaluation
+#Gruppenarbeit von Le, Caspar und Tom (11A)
+
 #Libraries für Börsendaten und Währungskurse werden importiert:
 import FundamentalAnalysis as fa 
 import coinoxr as oxr 
 
-api_key = "2355734d1486c0599f415923d59c1387" #apikey für FundamentalAnalysis einfügen
-oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #abikey für OpenExchangeRates eingeben
+api_key = "" #apikey für FundamentalAnalysis einfügen
+oxr.app_id = "" #abikey für OpenExchangeRates eingeben
 
 #Währungskurse werden heruntergeladen:
 exchange_rates = oxr.Latest().get() 
@@ -130,13 +133,22 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}
         return "Ein Fehler ist aufgetreten."
 
 
+#Hier folgen jetzt die Funktionen die eine Kennzahl einstufen und diesen einen Score zwischen 1 und 8 zurückgeben:
+#Alle sind sehr ähnlich aufgebaut, Schwellwerte und Einstufungsbereiche sind von der Kennzahl abhängig
+
+#Beispiel:
 def rateKGV(price, eps):  
+
+    #KGV wird aus Preis und Earnings per Share berechnet
     KGV=price/eps
     schwellenwerte=[300, 70, 40, 25, 15, 10, 0]
 
+    #Sonderfall: wenn KGV <= 0, besonders schlecht -> score von 1
     if KGV<=0:
         return 1
 
+    #Sonst ein loop der von schlecht bis gut durch die Schwellwertliste geht und für jeden "bestandenen" Schwellwert den Score erhöht
+    #wäre auch durch mehrere ifs gegangen, mit einer Schleife ist es nur kürzer
     else:
         score=2
         i=0
@@ -336,6 +348,7 @@ def ratePayoutRatio(dividendspaid,shares,eps):
     return(score)    
 
 
+#Hier werden die aktuell eingestellten Gewichtungen in Strings eingebettet, in Prozent umgerechnet und ausgegeben:
 def showpreferences():  
 
     print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
@@ -351,37 +364,56 @@ def showpreferences():
     print("Payout-Ratio\t\t\t{0}%\n".format(weight_PoR*100))
 
 
+#Das ist einfach nur unsere Hilfe-Ausgabe
 def helppage():
 
     print("""\nDas ist die Anleitung zu unserem Programm:\n\nset\t\t\t\t\t- Kennzahlen gewichten\nshow\t\t\t\t\t- aktuelle Gewichtung anzeigen
 rate + <Ticker Symbol>\t\t\t- Rating durchführen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
 
 
+#Hilfsfunktion für setpreferences()
 def askforpref(k_index, total):
 
+    #Je nach Kennzahlnummer wird eine anderer Fragesatz zurückgegeben
+    #Außerdem werden die übrigen zu gewichtenden Zahlen errechnet und die noch zu vergebende Menge wird eingebettet
     k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "das Kurs-zu-DCF-Verhältnis", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
 
 
+#Diese Funktion lässt den Nutzer neue Gewichtungen einstellen
 def setpreferences():
 
+    #Zuerst werden die aktuellen Gewichtungen und eine Anleitung ausgegeben
     showpreferences()
     print("Es müssen 100% auf die 10 verschiedenen Kennzahlen aufgeteilt werden:")
 
+    #definition einiger Variablen
     total = 100.0
     new_weights = [0,0,0,0,0,0,0,0,0,0]
     i = 0
 
+    #Es gibt 10 zu ändernde Gewichtungen
     while i < 10:
         try:
+            #An der Stelle i wird in der Liste der neuen Gewihtungen das also float Zahl gespeichert,
+            #was der Nutzer auf die Frage, die askforpref() ihm stellt antwortet
+            #askforpref() baut anhand der Nummer der Kennzahl bzw. i und der zu Vergebenden Menge eine angepasste Aufforderung zusammen
             new_weights[i] = float(input(askforpref(i, total)))
+
+            #Dieser Wert wird von der zu vergebenden Menge abgezogen
             total -= new_weights[i]
+
+            #Wenn das geklappt hat gehe zur nächsten Gewichtung
             i += 1
+
         except:
+            #Falls der Nutzer keine Zahl eingibt, kommt es zum Fehler in dem "try"-Bereich
+            #Dann wird diese Fehlermeldung ausgegeben und die gleiche Gewichtung wird nochmal abgefragt
             print("\nGeben Sie bitte eine ZAHL ein.\n")
             
+    #Wenn die Summe der neuen Gewichtungen 100 bzw. 100% entspricht werden die globalen Gewichtung verändert
     if  sum(new_weights) == 100:
 
         global weight_KGV
@@ -395,6 +427,7 @@ def setpreferences():
         global weight_PoR 
         global weight_Gewinnwachstum
 
+        #Die neuen Gewichtungen sind in Prozent angaben angegeben, die globalen Gewichtungen sind in Dezimalzahlen: 20%/100 -> 0.2
         weight_KGV = new_weights[0]/100
         weight_BruttoMarge = new_weights[1]/100
         weight_EKQ = new_weights[2]/100
@@ -412,11 +445,16 @@ def setpreferences():
         print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
+#Funktion, um Informationen zu einer Aktie auszugeben
 def info(ticker):
 
     try:
+        #Herunterladen eines Datensatzes in dem relevante Infos stehen:
+        #Das [0] wählt aus einem pandas.Dataframe mit einer Spalte die eine Spalte nochmal aus und macht somit eine pandas.Series Liste daraus
+        #Das hat den Vorteil, dass man unten dann direkt mit dem label in [] einen Wert wählen kann
         profile = fa.profile(ticker, api_key)[0]
 
+        #Daten werden aus der Liste geholt
         symbol = ticker
         name = profile["companyName"]
         exchangeShortName = profile["exchangeShortName"]
@@ -427,11 +465,14 @@ def info(ticker):
         city = profile["city"]
         state = profile["state"]
         country = profile["country"]
+        #Das Börseneintrittsdatum ist im Format "2021-3-30" angegeben. Wir wollen "30.3.2021".
+        #Dazu wird der Datumsstring an den Bindestrichen gedreiteilt und aus der entstandenen Liste werden danach das Jahr, der Monat und der Tag geholt
         ipo = profile["ipoDate"].split("-")
         ipoYear = ipo[0]
         ipoMonth = ipo[1]
         ipoDay = ipo[2]
 
+        #Hier werden alle Variablen in den Ausgabestring eingebettet
         return f"""\nTicker\t\t\t\t{symbol}
 Name\t\t\t\t{name}
 Exchange\t\t\t{exchangeShortName}
@@ -446,6 +487,10 @@ Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
         return "Ein Fehler ist aufgetreten."
 
 
+#Bis hier waren Funktionen, ab hier fängt der eigentliche Programmablauf an
+
+
+#Standard Gewichtungenn werden definiert
 weight_KGV = 1/10
 weight_BruttoMarge = 1/10
 weight_EKQ = 1/10
@@ -457,47 +502,61 @@ weight_KWGWV = 1/10
 weight_PoR = 1/10
 weight_Gewinnwachstum = 1/10
 
+#über das auf "False" Stellen der variable running kann die Endlosschleife des Programms gestoppt werden
 running = True
 
 try:
+    #Anleitung:
     print("""\n\nDer Aktienbewerter bewertet eine Aktie nach personalisiert gewichtbaren Kennzahlen. Die Interpretation dieser Kennzahlen
 (was gut und was schlecht ist) sieht große, nicht zu hoch bewertete Unternehmen mit hoher Dividendenrendite als ideal an. \nDer höchste Score liegt bei 800.
 Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
+    #Hauptschleife
     while running == True:
-
+        
+        #Prompt bzw. Eingabemöglichkeit für den Nutzer
         input_main = input("<§> ")
 
+        #Eingaben werden nicht beachtet, sind sie nur Leerzeichen oder nichts (der Nutzer hat nur Enter gedrückt)
         if input_main.isspace() == False and input_main != "":
 
+            #Der eingabestring wird in seine Wörter geteilt -> Befehle mir mehreren Komponenten werden möglich
             input_main = input_main.split()
 
+            #Falls der Nutzer NUR "set" eingibt -> setpreferences()
             if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
 
+            #Falls der Nutzer NUR "show" eingibt -> showpreferences()
             elif input_main[0] == "show" and len(input_main) == 1:
                 showpreferences()
 
+            #Falls der Nutzer "rate" eingibt und danach EIN weiteres Wort, wende auf dieses weitere Wort die "rate"-Funktion an
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
                     print(rate(input_main[1]))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
 
+            #Falls der Nutzer "info" eingibt und danach EIN weiteres Wort, wende auf dieses weitere Wort die "info"-Funktion an
             elif input_main[0] == "info":
                 if len(input_main) == 2:
                     print(info(input_main[1]))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "info" ein.')
 
+            #Hilfefunktion
             elif input_main[0] == "hilfe":
                 helppage()
 
+            #Wenn der Nutzer "ende" eingibt, setze running auf False -> while Schleife endet und Programm endet
             elif input_main[0] == "ende":
                 running = False
 
+            #Wenn keine der Bedingungen erfüllt ist -> "unbekannter Befehl"
             else:
                 print('Unbekannter Befehl. Geben Sie "hilfe" ein, um die Anleitung angezeigt zu bekommen.' )
 
+#Falls der Nuter das Programm über <STRG> + <C> beendet, wird "BEENDET" ausgegeben
 except KeyboardInterrupt:
         print("\nBEENDET")
