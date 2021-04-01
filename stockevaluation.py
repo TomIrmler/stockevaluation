@@ -464,6 +464,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
         if input_main.isspace() == False and input_main != "":
 
             input_main = input_main.split()
+			input_main = [content if index == 0 else content.upper() for index, content in enumerate(input_main)]
 
             if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
