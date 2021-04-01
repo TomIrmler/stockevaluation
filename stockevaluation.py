@@ -474,8 +474,13 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
                     print(rate(input_main[1], "rate"))
+		
+                elif len(input_main) == 1:
+                    print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
+
                 else:
-                    print('Geben Sie EIN Ticker Sym bol hinter "rate" ein.')
+                    del input_main[0]
+                    compare(input_main)
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
