@@ -20,7 +20,7 @@ def Euro(Wert, Währung):
     return WertinEUR
 
 
-def rate(ticker):
+def rate(ticker, mode):
 
     try:
         global exchange_rates
@@ -103,7 +103,11 @@ def rate(ticker):
         nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
-        return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+        if mode == "compare":
+            return Gesamtscore
+        
+        else:
+            return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
 Ebitda-Marge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
 Aktienliquidität ({nomLiquidity} mio.)\t\t{ScoreLiquidityRound} / {maxLiquidity}
 Dividendenrendite ({nomdividendyield}%)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
@@ -469,9 +473,9 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
-                    print(rate(input_main[1]))
+                    print(rate(input_main[1], "rate"))
                 else:
-                    print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
+                    print('Geben Sie EIN Ticker Sym bol hinter "rate" ein.')
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
