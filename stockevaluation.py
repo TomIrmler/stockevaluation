@@ -480,7 +480,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
                 else:
                     del input_main[0]
-                    compare(input_main)
+                    print(compare(input_main))
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
