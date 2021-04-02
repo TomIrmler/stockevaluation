@@ -122,6 +122,32 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}
     except:
         return "Ein Fehler ist aufgetreten."
 
+def compare():
+    slist = []
+    flist = []
+    i = 0
+    a = 0
+    b = 1
+
+    for ticker in input_main:
+        rate(ticker, "compare")
+        slist.append(Gesamtscore)
+        flist.append([slist[a], input_main[a]])
+        a += 1
+
+    flist.sort(reverse=True)
+    elements = len(flist)
+    print()
+    print("Die beste Aktie ist",flist[0][1] ,"mit einem Score von",flist[0][0])
+    print("\nSonstige Ergebnisse sind:")
+    
+    while elements != b:
+        try:
+            print(flist[b][1],"mit einem Score von", flist[b][0])
+            b += 1
+        except:
+            return "Ein Fehler ist aufgetreten"
+
 
 def rateKGV(price, eps):  
     KGV=price/eps
