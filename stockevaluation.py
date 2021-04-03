@@ -3,9 +3,33 @@
 
 import FundamentalAnalysis as fa
 import coinoxr as oxr
+from urllib.error import HTTPError
 
-api_key = "" #apikey noch einfügen
-oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
+fa_key_list = [
+"eac1e8123c3c726a7b4ea0afab0435ae",
+"bffa35224a8bfafcb001a86d8f83e9c8",
+"e438c06772eb98390b1e07e0ab32b4bc",
+"dd9ed4ecf6358d53a810b784681ad599",
+"2355734d1486c0599f415923d59c1387",
+"5fbfd27ef7db1675a45ab5dc495e4d5c",
+"69e09ca16aff5a81a2ff3dbf9da36f23",
+"57e021944cf7e0798365be42b1204f52",
+"2f0eeac2bc7c37dfeffb3c9df5189d11",
+"977acb09f1542f4b0ee486a776ba3f75",
+"60791a05960a90f65b7fcbb8710d731e",
+"2571916569bb27780b565d4763c8ff51",
+"5159debfefae913686331ec86787ab38",
+"f2954eaa06c1207b8b5fea46e5843af8",
+"9d8cb0c401b232abcf2f30c5be446881",
+"43730b668f3faa9dd2d6b51cc1a2e19f",
+"710b04258c7c2499e9d741901bfc64cd",
+"f555ddf7c9887d53d80383de750168b2",
+"3d3548b991f6645d504d30cce4ef1034",
+"5c2269c01cf20536ff22a6c420d6f49c"
+]
+fa_key_num = 0
+api_key = fa_key_list[0] #apikey noch einfügen
+oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
 
 exchange_rates = oxr.Latest().get()
 
@@ -20,10 +44,12 @@ def Euro(Wert, Währung):
     return WertinEUR
 
 
-def rate(ticker):
+def rate(ticker, mode):
 
     try:
         global exchange_rates
+        global api_key
+        global fa_key_num
 
         quote = fa.quote(ticker, api_key)[0] 
         incomeall = fa.income_statement(ticker, api_key, period="annual")
@@ -38,7 +64,7 @@ def rate(ticker):
         quote_currency = "USD" 
 
         if statement_currency not in exchange_rates.body["rates"]:
-            return "Error: Die Zahlen der angegebenen Aktie sind in einer unbekannten Währung angegeben."
+            return "Error: Die Zahlen der Aktie \"{0}\" sind in einer unbekannten Währung angegeben.".format(ticker)
 
         ebitda = Euro(incomevor0["ebitda"], statement_currency)  
         ebitdavor1 = Euro(incomevor1["ebitda"], statement_currency)
@@ -66,7 +92,7 @@ def rate(ticker):
         DCFScore=rateDCFV(stockprice,dcf)*weight_DCFV*100
         GewinnwachstumScore=rateGewinnwachstum(ebitda, ebitdavor3)*weight_Gewinnwachstum*100
         KWGWVScore=rateKWGWV(price, pricevor1, ebitda, ebitdavor1)*weight_KWGWV*100
-        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps)*weight_PoR*100
+        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
 
@@ -103,20 +129,62 @@ def rate(ticker):
         nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
-        return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Ebitda-Marge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
-Aktienliquidität ({nomLiquidity} mio.)\t\t{ScoreLiquidityRound} / {maxLiquidity}
-Dividendenrendite ({nomdividendyield}%)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
-Umsatzgröße ({nomUmsatz} mio.)\t\t{ScoreUmsatzRound} / {maxUmsatz}
-Eigenkapitalquote ({nomEKQ}%)\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
-Kurs-DCF-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
-Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
-Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
-Payout-Ratio ({nomPayoutRatio}%)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+        if mode == "compare":
+            return Gesamtscore
         
+        else:
+            return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
+Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
+Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
+Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+    
+    except HTTPError as err:
+        if err.code == 403:
+            fa_key_num += 1
+            api_key = fa_key_list[fa_key_num]
+            return rate(ticker, mode)
+
     except:
         return "Ein Fehler ist aufgetreten."
+
+def compare(tickerliste):
+    flist = []
+    highest = []
+    returnstring = ""
+
+    for ticker in tickerliste:
+
+        rating = [rate(ticker, "compare"), ticker]
+        if rating[0] == "Ein Fehler ist aufgetreten.":
+            rating[0] = "Fehler"
+            
+        flist.append(rating)
+        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
+
+
+    flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
+    highest = [rating for rating in flist if rating[0] == flist[0][0]]
+    
+    del flist[0:len(highest)]
+
+    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
+    for rating in highest:
+        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+    
+    returnstring += "\n"
+    
+    for rating in flist:
+        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+
+    return returnstring
+
 
 
 def rateKGV(price, eps):  
@@ -296,14 +364,15 @@ def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
     return(score)
 
 
-def ratePayoutRatio(dividendspaid,shares,eps): 
+def ratePayoutRatio(dividendspaid,shares,eps, mode): 
     dividenden=dividendspaid*(-1)
     dps=dividenden/shares
     PoR=dps/eps
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
     if dividendspaid==0:
-        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
+        if mode != "compare":
+            print("\nDa keine Dividende gezahlt wurde, wurde bei eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
         return 4
 
     elif PoR>=0.8:
@@ -460,6 +529,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
         if input_main.isspace() == False and input_main != "":
 
             input_main = input_main.split()
+            input_main = [content if index == 0 else content.upper() for index, content in enumerate(input_main)]
 
             if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
@@ -469,9 +539,14 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "rate":
                 if len(input_main) == 2:
-                    print(rate(input_main[1]))
+                    print(rate(input_main[1], "rate"))
+		
+                elif len(input_main) == 1:
+                    print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
+
                 else:
-                    print('Geben Sie EIN Ticker Symbol hinter "rate" ein.')
+                    # del input_main[0] würde ich eher so machen [1:] gibt auch nur alles außer das erste
+                    print(compare(input_main[1:]))
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
