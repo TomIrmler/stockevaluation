@@ -12,7 +12,20 @@ fa_key_list = [
 "dd9ed4ecf6358d53a810b784681ad599",
 "2355734d1486c0599f415923d59c1387",
 "5fbfd27ef7db1675a45ab5dc495e4d5c",
-"69e09ca16aff5a81a2ff3dbf9da36f23"
+"69e09ca16aff5a81a2ff3dbf9da36f23",
+"57e021944cf7e0798365be42b1204f52",
+"2f0eeac2bc7c37dfeffb3c9df5189d11",
+"977acb09f1542f4b0ee486a776ba3f75",
+"60791a05960a90f65b7fcbb8710d731e",
+"2571916569bb27780b565d4763c8ff51",
+"5159debfefae913686331ec86787ab38",
+"f2954eaa06c1207b8b5fea46e5843af8",
+"9d8cb0c401b232abcf2f30c5be446881",
+"43730b668f3faa9dd2d6b51cc1a2e19f",
+"710b04258c7c2499e9d741901bfc64cd",
+"f555ddf7c9887d53d80383de750168b2",
+"3d3548b991f6645d504d30cce4ef1034",
+"5c2269c01cf20536ff22a6c420d6f49c"
 ]
 fa_key_num = 0
 api_key = fa_key_list[0] #apikey noch einfügen
@@ -154,7 +167,7 @@ def compare(tickerliste):
             rating[0] = "Fehler"
             
         flist.append(rating)
-        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*len(tickerliste[tickerliste.index(ticker)-1]), end="\r")
+        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
 
 
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
@@ -162,7 +175,7 @@ def compare(tickerliste):
     
     del flist[0:len(highest)]
 
-    returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
+    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
     for rating in highest:
         returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
     
