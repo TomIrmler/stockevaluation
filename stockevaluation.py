@@ -79,7 +79,7 @@ def rate(ticker, mode):
         DCFScore=rateDCFV(stockprice,dcf)*weight_DCFV*100
         GewinnwachstumScore=rateGewinnwachstum(ebitda, ebitdavor3)*weight_Gewinnwachstum*100
         KWGWVScore=rateKWGWV(price, pricevor1, ebitda, ebitdavor1)*weight_KWGWV*100
-        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, ticker)*weight_PoR*100
+        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
 
@@ -136,7 +136,8 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
         if err.code == 403:
             fa_key_num += 1
             api_key = fa_key_list[fa_key_num]
-            return "Anfragen leer. Nächster Key ausgewählt."
+            #print("Anfragen leer. Nächster Key ausgewählt: {0}".format(api_key))
+            return rate(ticker, mode)
 
     except:
         return "Ein Fehler ist aufgetreten."
@@ -151,11 +152,9 @@ def compare(tickerliste):
         rating = [rate(ticker, "compare"), ticker]
         if rating[0] == "Ein Fehler ist aufgetreten.":
             rating[0] = "Fehler"
-        elif rating[0] == "Anfragen leer. Nächster Key ausgewählt.":
-            print("Anfragen leer. Nächster Key ausgewählt.")
-            rating = [rate(ticker, "compare"), ticker]
             
         flist.append(rating)
+        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*len(tickerliste[tickerliste.index(ticker)-1]), end="\r")
 
 
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
@@ -353,14 +352,15 @@ def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
     return(score)
 
 
-def ratePayoutRatio(dividendspaid,shares,eps, ticker): 
+def ratePayoutRatio(dividendspaid,shares,eps, mode): 
     dividenden=dividendspaid*(-1)
     dps=dividenden/shares
     PoR=dps/eps
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
     if dividendspaid==0:
-        print("\nDa keine Dividende gezahlt wurde, wurde bei \"{0}\" eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.".format(ticker))
+        if mode != "compare":
+            print("\nDa keine Dividende gezahlt wurde, wurde bei eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
         return 4
 
     elif PoR>=0.8:
