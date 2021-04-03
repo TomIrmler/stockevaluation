@@ -138,8 +138,7 @@ def compare(tickerliste):
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
     highest = [rating for rating in flist if rating[0] == flist[0][0]]
     
-    for i in range(len(highest)):
-        flist.pop(i)
+    del flist[0:len(highest)]
 
     returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
     for rating in highest:
@@ -511,6 +510,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
                     print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
 
                 else:
+                    # del input_main[0] würde ich eher so machen [1:] gibt auch nur alles außer das erste
                     print(compare(input_main[1:]))
 
             elif input_main[0] == "info":
