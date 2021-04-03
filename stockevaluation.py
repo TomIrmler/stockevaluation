@@ -25,7 +25,38 @@ fa_key_list = [
 "710b04258c7c2499e9d741901bfc64cd",
 "f555ddf7c9887d53d80383de750168b2",
 "3d3548b991f6645d504d30cce4ef1034",
-"5c2269c01cf20536ff22a6c420d6f49c"
+"5c2269c01cf20536ff22a6c420d6f49c",
+"0020ef2d96e0f264a8ffd5df676de913",
+"69aed82b47593159b4cca43e9822ac10",
+"05d509e0fb6763d26f9379dc5b991cb9",
+"0f3b3316959b66a95ef0794130caee64",
+"6d92662bb3ca726ba12c7b0f9915748c",
+"ba3f3065495b04c9bf686206a5184fb8",
+"f6f38d3dc1a5b1df39f764ee0d5834cb",
+"27d184007110aaf8d53c15423b80db6f",
+"16366fe8670fe6bac9ef08ef3f0b449c",
+"65c28a0d1a075b479c672532f8d3f847",
+"d1846a3511dffd3a0891c19cb6c4b019",
+"5f526fc972683e8f2f1ded7ead9b3c13",
+"ca2d7911492c920aab10c257daf623c5",
+"5c047480a5eb6533dd47853593f594d2",
+"6ba601aa917c30bfc514a47c03434095",
+"d9257db90df7056b2b7bde9674beb02c",
+"a0464683a51a4cb856c947ce9db32f78",
+"907fa277ce14f196fad0d0470301e4bd",
+"7d6edf8099d7359b459ea810925c7343",
+"56c3159c838957ac376cc424d7345bcf",
+"68a647e9187d42e33829d2625ce54931",
+"bbae43c3bfb2c3c0811ae1ffd9b8d04c",
+"5773c17f08fb9fa3afdaafeb37bf4989",
+"3acf60a981ae476f3affdd0ea4afcd6b",
+"3bdb84aded3c6ece9c6d2ab013903f73",
+"ad00601ed189c6f369418c982b2bc640",
+"ee002a54d9dfdd97b10c77aff69da47c",
+"8c2d3e1727fbc2bcc9216414aa96b009",
+"c945da48933f57f71b8aaf7f6561f004",
+"c0b7f60dd03a4424e97897303c6291b4",
+"008ebc576253d43950dd0ea81590dfbd"
 ]
 fa_key_num = 0
 api_key = fa_key_list[0] #apikey noch einfügen
@@ -147,9 +178,13 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
     
     except HTTPError as err:
         if err.code == 403:
-            fa_key_num += 1
-            api_key = fa_key_list[fa_key_num]
-            return rate(ticker, mode)
+            try:
+                fa_key_num += 1
+                api_key = fa_key_list[fa_key_num]
+                print("Anfragen leer. Nächster Key ausgewählt: {0}".format(api_key))
+                return rate(ticker, mode)
+            except IndexError:
+                return "Alle API Keys sind aufgebraucht."
 
     except:
         return "Ein Fehler ist aufgetreten."
@@ -164,9 +199,12 @@ def compare(tickerliste):
         rating = [rate(ticker, "compare"), ticker]
         if rating[0] == "Ein Fehler ist aufgetreten.":
             rating[0] = "Fehler"
+        
+        elif rating[0] == "Alle API Keys sind aufgebraucht.":
+            return rating[0]
             
         flist.append(rating)
-        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
+        print("Ticker {0}/{1} gerated. ({3})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
 
 
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
