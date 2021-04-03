@@ -204,7 +204,7 @@ def compare(tickerliste):
             return rating[0]
             
         flist.append(rating)
-        print("Ticker {0}/{1} gerated. ({3})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
+        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
 
 
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
@@ -442,10 +442,10 @@ def showpreferences():
     print("Umsatz\t\t\t\t{0}%".format(weight_Umsatz*100))
     print("Aktienliquidität\t\t{0}%".format(weight_Aktienliquidität*100))
     print("Kurs-zu-DCF-Verhältnis\t\t{0}%".format(weight_DCFV*100))
-    print("Gewinnwachstum\t\t\t{0}%".format(weight_Gewinnwachstum*100))
     print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_Gewinnwachstum*100))
-    print("Payout-Ratio\t\t\t{0}%\n".format(weight_PoR*100))
-
+    print("Payout-Ratio\t\t\t{0}%".format(weight_PoR*100))
+    print("Gewinnwachstum\t\t\t{0}%\n".format(weight_Gewinnwachstum*100))
+   
 
 def helppage():
 
