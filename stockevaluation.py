@@ -38,7 +38,7 @@ def rate(ticker, mode):
         quote_currency = "USD" 
 
         if statement_currency not in exchange_rates.body["rates"]:
-            return "Error: Die Zahlen der angegebenen Aktie sind in einer unbekannten Währung angegeben."
+            return "Error: Die Zahlen der Aktie \"{0}\" sind in einer unbekannten Währung angegeben.".format(ticker)
 
         ebitda = Euro(incomevor0["ebitda"], statement_currency)  
         ebitdavor1 = Euro(incomevor1["ebitda"], statement_currency)
@@ -66,7 +66,7 @@ def rate(ticker, mode):
         DCFScore=rateDCFV(stockprice,dcf)*weight_DCFV*100
         GewinnwachstumScore=rateGewinnwachstum(ebitda, ebitdavor3)*weight_Gewinnwachstum*100
         KWGWVScore=rateKWGWV(price, pricevor1, ebitda, ebitdavor1)*weight_KWGWV*100
-        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps)*weight_PoR*100
+        PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, ticker)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
 
@@ -108,45 +108,50 @@ def rate(ticker, mode):
         
         else:
             return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Ebitda-Marge ({nomMarge}%)\t\t\t{ScoreMargeRound} / {maxMarge}
-Aktienliquidität ({nomLiquidity} mio.)\t\t{ScoreLiquidityRound} / {maxLiquidity}
-Dividendenrendite ({nomdividendyield}%)\t\t{ScoreDividendyieldRound} / {maxDividendyield}
-Umsatzgröße ({nomUmsatz} mio.)\t\t{ScoreUmsatzRound} / {maxUmsatz}
-Eigenkapitalquote ({nomEKQ}%)\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t{ScoreKGVRound} / {maxKGV}
-Kurs-DCF-Verhältnis ({nomDCF})\t\t{ScoreDCFRound} / {maxDCF}
-Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
-Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t{ScoreKWGWVRound} / {maxKWGWV}
-Payout-Ratio ({nomPayoutRatio}%)\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
+Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
+Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
+Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
         
     except:
         return "Ein Fehler ist aufgetreten."
 
-def compare():
-    slist = []
+def compare(tickerliste):
     flist = []
-    i = 0
-    a = 0
-    b = 1
+    highest = []
+    returnstring = ""
 
-    for ticker in input_main:
-        rate(ticker, "compare")
-        slist.append(Gesamtscore)
-        flist.append([slist[a], input_main[a]])
-        a += 1
+    for ticker in tickerliste:
 
-    flist.sort(reverse=True)
-    elements = len(flist)
-    print()
-    print("Die beste Aktie ist",flist[0][1] ,"mit einem Score von",flist[0][0])
-    print("\nSonstige Ergebnisse sind:")
+        rating = [rate(ticker, "compare"), ticker]
+        if rating[0] == "Ein Fehler ist aufgetreten.":
+            rating[0] = "Fehler"
+        flist.append(rating)
+
+
+    flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
+    highest = [rating for rating in flist if rating[0] == flist[0][0]]
     
-    while elements != b:
-        try:
-            print(flist[b][1],"mit einem Score von", flist[b][0])
-            b += 1
-        except:
-            return "Ein Fehler ist aufgetreten"
+    for i in range(len(highest)):
+        flist.pop(i)
+
+    returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
+    for rating in highest:
+        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+    
+    returnstring += "\n"
+    
+    for rating in flist:
+        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+
+    return returnstring
+
 
 
 def rateKGV(price, eps):  
@@ -326,14 +331,14 @@ def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
     return(score)
 
 
-def ratePayoutRatio(dividendspaid,shares,eps): 
+def ratePayoutRatio(dividendspaid,shares,eps, ticker): 
     dividenden=dividendspaid*(-1)
     dps=dividenden/shares
     PoR=dps/eps
     schwellenwerte=[0.05,0.15,0.25,0.4,0.6,0.8]
     
     if dividendspaid==0:
-        print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
+        print("\nDa keine Dividende gezahlt wurde, wurde bei \"{0}\" eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.".format(ticker))
         return 4
 
     elif PoR>=0.8:
@@ -506,8 +511,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
                     print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
 
                 else:
-                    del input_main[0]
-                    print(compare(input_main))
+                    print(compare(input_main[1:]))
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
