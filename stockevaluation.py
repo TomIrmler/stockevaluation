@@ -149,7 +149,6 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
         if err.code == 403:
             fa_key_num += 1
             api_key = fa_key_list[fa_key_num]
-            #print("Anfragen leer. Nächster Key ausgewählt: {0}".format(api_key))
             return rate(ticker, mode)
 
     except:
