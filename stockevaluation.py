@@ -152,6 +152,7 @@ def compare(tickerliste):
         if rating[0] == "Ein Fehler ist aufgetreten.":
             rating[0] = "Fehler"
         elif rating[0] == "Anfragen leer. Nächster Key ausgewählt.":
+            print("Anfragen leer. Nächster Key ausgewählt.")
             rating = [rate(ticker, "compare"), ticker]
             
         flist.append(rating)
