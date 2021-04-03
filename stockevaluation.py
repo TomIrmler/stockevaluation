@@ -3,9 +3,20 @@
 
 import FundamentalAnalysis as fa
 import coinoxr as oxr
+from urllib.error import HTTPError
 
-api_key = "" #apikey noch einfügen
-oxr.app_id = "" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
+fa_key_list = [
+"eac1e8123c3c726a7b4ea0afab0435ae",
+"bffa35224a8bfafcb001a86d8f83e9c8",
+"e438c06772eb98390b1e07e0ab32b4bc",
+"dd9ed4ecf6358d53a810b784681ad599",
+"2355734d1486c0599f415923d59c1387",
+"5fbfd27ef7db1675a45ab5dc495e4d5c",
+"69e09ca16aff5a81a2ff3dbf9da36f23"
+]
+fa_key_num = 0
+api_key = fa_key_list[0] #apikey noch einfügen
+oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
 
 exchange_rates = oxr.Latest().get()
 
@@ -24,6 +35,8 @@ def rate(ticker, mode):
 
     try:
         global exchange_rates
+        global api_key
+        global fa_key_num
 
         quote = fa.quote(ticker, api_key)[0] 
         incomeall = fa.income_statement(ticker, api_key, period="annual")
@@ -118,7 +131,13 @@ Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
 Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
-        
+    
+    except HTTPError as err:
+        if err.code == 403:
+            fa_key_num += 1
+            api_key = fa_key_list[fa_key_num]
+            return "Anfragen leer, nächste key ausgewählt: {0}".format(api_key)
+
     except:
         return "Ein Fehler ist aufgetreten."
 
