@@ -623,7 +623,8 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "ende":
                 running = False
-
+		print("BEENDET")
+		
             else:
                 print('Unbekannter Befehl. Geben Sie "hilfe" ein, um die Anleitung angezeigt zu bekommen.' )
 
