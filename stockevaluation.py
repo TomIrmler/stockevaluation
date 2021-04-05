@@ -77,11 +77,9 @@ def Euro(Wert, Währung):
 
 def rate(ticker, mode):
 
-    try:
-        global exchange_rates
-        global api_key
-        global fa_key_num
+    global exchange_rates
 
+    try:
         quote = fa.quote(ticker, api_key)[0] 
         incomeall = fa.income_statement(ticker, api_key, period="annual")
         incomevor0 = incomeall.iloc[:,0] 
@@ -178,21 +176,33 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
     
     except HTTPError as err:
         if err.code == 403:
-            try:
-                fa_key_num += 1
-                api_key = fa_key_list[fa_key_num]
-                print("Anfragen leer. Nächster Key ausgewählt: {0}".format(api_key))
-                return rate(ticker, mode)
-            except IndexError:
-                return "Alle API Keys sind aufgebraucht."
-
+            if switchkey() == True:
+                rate(ticker, mode)
+            else:
+                return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
+            
     except:
         return "Ein Fehler ist aufgetreten."
+
+def switchkey():
+    global api_key
+    global fa_key_num
+
+    try:
+        fa_key_num += 1
+        api_key = fa_key_list[fa_key_num]
+        return True
+        
+    except IndexError:
+        return False 
 
 def compare(tickerliste):
     flist = []
     highest = []
     returnstring = ""
+    tabanzahl = len(max(tickerliste))
+
+    print("")
 
     for ticker in tickerliste:
 
@@ -200,26 +210,35 @@ def compare(tickerliste):
         if rating[0] == "Ein Fehler ist aufgetreten.":
             rating[0] = "Fehler"
         
-        elif rating[0] == "Alle API Keys sind aufgebraucht.":
+        elif rating[0] == "Alle API-Keys für FundamentalAnalysis sind aufgebraucht.":
             return rating[0]
             
         flist.append(rating)
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
-
-
+    
     flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
-    highest = [rating for rating in flist if rating[0] == flist[0][0]]
     
-    del flist[0:len(highest)]
+    highest = [rating for rating in flist if rating[0] == flist[0][0] and flist[0][0] != "Fehler"]
+    failed = [rating for rating in flist if rating[0] == "Fehler"]
+    flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]
 
-    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n\n"
-    for rating in highest:
-        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+    returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.".format(len(tickerliste), len(failed))
+    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
+
+    for index, rating in enumerate(highest):
+        if index == 0:
+            returnstring += "\n"
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0])
     
-    returnstring += "\n"
-    
-    for rating in flist:
-        returnstring += "{0}\t\t{1}\n".format(rating[1], rating[0])
+    for index, rating in enumerate(flist):
+        if index == 0:
+            returnstring += "\n"
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0])
+
+    for index, rating in enumerate(failed):
+        if index == 0:
+            returnstring += "\n"
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0])
 
     return returnstring
 
@@ -538,8 +557,16 @@ Adresse\t\t\t\t{address}
 Stadt\t\t\t\t{city}, {state}, {country}
 Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
+    except HTTPError as err:
+        if err.code == 403:
+            if switchkey() == True:
+                rate(ticker, mode)
+            else:
+                return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
+
     except:
         return "Ein Fehler ist aufgetreten."
+
 
 
 weight_KGV = 1/10
@@ -567,7 +594,7 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
         if input_main.isspace() == False and input_main != "":
 
             input_main = input_main.split()
-            input_main = [content if index == 0 else content.upper() for index, content in enumerate(input_main)]
+            input_main = [content.upper() if index != 0 else content for index, content in enumerate(input_main)]
 
             if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
@@ -583,7 +610,6 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
                     print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
 
                 else:
-                    # del input_main[0] würde ich eher so machen [1:] gibt auch nur alles außer das erste
                     print(compare(input_main[1:]))
 
             elif input_main[0] == "info":
