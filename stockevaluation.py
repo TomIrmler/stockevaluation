@@ -200,7 +200,6 @@ def compare(tickerliste):
     flist = []
     highest = []
     returnstring = ""
-    tabanzahl = len(max(tickerliste))
 
     print("")
 
