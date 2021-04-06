@@ -177,7 +177,7 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
     except HTTPError as err:
         if err.code == 403:
             if switchkey() == True:
-                rate(ticker, mode)
+                return rate(ticker, mode)
             else:
                 return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
             
@@ -623,8 +623,8 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "ende":
                 running = False
-		print("BEENDET")
-		
+                print("BEENDET")
+
             else:
                 print('Unbekannter Befehl. Geben Sie "hilfe" ein, um die Anleitung angezeigt zu bekommen.' )
 
