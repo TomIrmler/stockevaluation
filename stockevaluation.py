@@ -493,7 +493,7 @@ def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
         Valuation.append(valuePrice)
 
 
-    elif gapPercent <= 0.3:
+    elif gapPercent <= 0.1:
         Valuation.append("likely undervalued")
         Valuation.append(valuePrice)
     
