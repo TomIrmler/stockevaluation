@@ -164,7 +164,7 @@ def rate(ticker, mode):
             return [Gesamtscore, Valuation[0]]
         
         else:
-            return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+            normalreturn = f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
 Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
 Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
 Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
@@ -175,6 +175,18 @@ Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
 Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+            print(Valuation[0])
+
+            if Valuation[1] == "undervalued" or "likely undervalued":
+                addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
+                newreturn= addreturn + normalreturn 
+                return newreturn
+                 
+            else:
+               return normalreturn
+
+            
+            
     
     except HTTPError as err:
         if err.code == 403:
@@ -210,61 +222,64 @@ def compare(tickerliste):
     for ticker in tickerliste:
         rating = [rate(ticker, "compare"), ticker]
 
-        if rating[0] == "Ein Fehler ist aufgetreten.":
-            rating[0] = "Fehler"
-            flist.append(rating)
+        if rating[0][0] == "Ein Fehler ist aufgetreten.":
+            rating[0][0] = "Fehler"
             
-        elif rating[0] == "Alle API Keys sind aufgebraucht.":
-            return rating[0]
+        elif rating[0][0] == "Alle API Keys sind aufgebraucht.":
+            return rating[0][0]
 
         else:
-            if rating [0][1] == "undervalued":
+            if rating[0][1] == "undervalued":
                 undervalued.append(rating)
             
-            elif rating [0][1] == "likely undervalued":
+            elif rating[0][1] == "likely undervalued":
                 likelyUndervalued.append(rating)
 
-            elif rating [0][1] == "neutral":
-                del rating [0][1]
+            elif rating[0][1] == "neutral":
+                del rating[0][1]
+        flist.append(rating)
 
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
     
     highest = [rating for rating in flist if rating[0][0] == flist[0][0][0] and flist[0][0][0] != "Fehler"]
-    failed = [rating for rating in flist if rating[0] == "Fehler"]
+    failed = [rating for rating in flist if rating[0][0] == "Fehler"]
     flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]                               
 
-    returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.".format(len(tickerliste), len(failed))
-    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
+    returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.\n".format(len(tickerliste), len(failed))
 
     if len(undervalued) > 0:
-        returnstring += "Klar unterbewertete Unternehmen:\n"
+        returnstring += "\nKlar unterbewertete Unternehmen:\n"
         for rating in undervalued:
             returnstring += "{0}\t\t{1}\t\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
-        
+
+        returnstring += "\n"
 
     if len(likelyUndervalued) > 0:
-        returnstring += "Wahrscheinlich unterbewertete Unternehmen:\n"
+        returnstring += "\nWahrscheinlich unterbewertete Unternehmen:\n"
         for rating in likelyUndervalued:
             returnstring += "{0}\t\t{1}\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
 
         returnstring += "\n"
-    
+
+   
+    returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
+
     for index, rating in enumerate(highest):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0])
-    
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0][0])
+
     for index, rating in enumerate(flist):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0])
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0][0])
 
     for index, rating in enumerate(failed):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0])
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0][0])
 
     return returnstring
 
@@ -479,7 +494,7 @@ def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
         Valuation.append(valuePrice)
 
 
-    elif gapPercent <= 0.05:
+    elif gapPercent <= 0.3:
         Valuation.append("likely undervalued")
         Valuation.append(valuePrice)
     
