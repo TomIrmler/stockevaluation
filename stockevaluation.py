@@ -503,7 +503,7 @@ def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
 
 def showpreferences():  
 
-    print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
+    print("\nDas ist die aktuelle Gewichtung der Kennzahlen in Ihrem Score:\n")
     print("KGV\t\t\t\t{0}%".format(weight_KGV*100))
     print("Ebitda-Marge\t\t\t{0}%".format(weight_BruttoMarge*100))
     print("Eigenkapitalquote\t\t{0}%".format(weight_EKQ*100))
@@ -574,7 +574,7 @@ def setpreferences():
         print("")
 
     else:
-        print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
+        print("Die Summe Ihrer Prozentangaben liegt nicht bei genau 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
 def info(ticker):
