@@ -184,9 +184,6 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
             else:
                 return normalreturn
 
-            
-            
-    
     except HTTPError as err:
         if err.code == 403:
             if switchkey() == True:
@@ -221,8 +218,8 @@ def compare(tickerliste):
     for ticker in tickerliste:
         rating = [rate(ticker, "compare"), ticker]
 
-        if rating[0][0] == "Ein Fehler ist aufgetreten.":
-            rating[0][0] = "Fehler"
+        if rating[0] == "Ein Fehler ist aufgetreten.":
+            rating[0] = ["Fehler"]
             
         elif rating[0][0] == "Alle API Keys sind aufgebraucht.":
             return rating[0][0]
@@ -240,6 +237,8 @@ def compare(tickerliste):
 
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
+    print(flist)
+
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
     
     highest = [rating for rating in flist if rating[0][0] == flist[0][0][0] and flist[0][0][0] != "Fehler"]
