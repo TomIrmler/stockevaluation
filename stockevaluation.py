@@ -62,7 +62,7 @@ fa_key_num = 0
 api_key = fa_key_list[0] 
 oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        
 
-exchange_rates = oxr.Latest().get()1
+exchange_rates = oxr.Latest().get()
 
 
 def Euro(Wert, Währung):
