@@ -3,19 +3,19 @@ import concurrent.futures
 import time
 from urllib.request import urlopen
 
-api_key = "69e09ca16aff5a81a2ff3dbf9da36f23"
-tickerliste = "AAPL  MSFT AMZN FB GOOGL TSLA BRK.B JPM JNJ V UNH DIS NVDA HD PG MA BAC PYPL INTC CMCSA XOM VZ NFLX ADBE CSCO T ABT CVX KO PFE CRM MRK PEP AVGO ABBV WMT TMO TXN ACN NKE MCD WFC MDT COST QCOM C HON NEE UNP LLY LIN AMGN DHR BMY LOW BA PM ORCL AMAT SBUX CAT UPS IBM RTX MS DE GE GS MMM BLK INTU AMT MU TGT NOW SCHW AMD BKNG CVS MO LRCX FIS ISRG SPGI ANTM CHTR CI GILD MDLZ ADP PLD TFC SYK TJX USB CCI PNC ZTS TMUS CSX ATVI DUK CME GM COP CB FISV BDX FDX NSC CL EL SO ICE ITW APD MMC ADSK GPN D EQIX SHW COF ADI NXPI ILMN PGR ETN VRTX BSX EMR ECL KLAC HUM AON EW TWTR WM REGN NOC DG "
-tickerliste=tickerliste.split()
-print(len(tickerliste))
+api_key = "60791a05960a90f65b7fcbb8710d731e"
+ticker = "FB"
+
 
 def get_data(link):
     try:  
         r = urlopen(link)
         data = json.loads(r.read().decode("utf-8"))
-        print(data, "\n")
+        return data
         
-    except:
-        pass
+    except Exception as err:
+        return err
+        
 
 def get_ticker(ticker):
 
@@ -27,15 +27,14 @@ def get_ticker(ticker):
     link_list = [quoter, balancer, cashflowr, DCFr, incomer]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        executor.map(get_data, link_list)
+        threadlist = {executor.submit(get_data, link): link for link in link_list}
+    
+    return [thread.result() for thread in threadlist]    
 
 time1 = time.perf_counter()
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=None) as executor:
-        executor.map(get_ticker, tickerliste)
-
-#for ticker in tickerliste:
-#    get_ticker(ticker)
+quote, balance, cashflow, DCF, income = get_ticker(ticker)
+print(quote, balance, cashflow, DCF, income, sep="\n\n")
 
 time2 = time.perf_counter()
 print(time2-time1)
