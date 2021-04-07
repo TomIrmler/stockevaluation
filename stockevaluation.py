@@ -59,10 +59,10 @@ fa_key_list = [
 "008ebc576253d43950dd0ea81590dfbd"
 ]
 fa_key_num = 0
-api_key = fa_key_list[0] #apikey noch einfügen
-oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
+api_key = fa_key_list[0] 
+oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        
 
-exchange_rates = oxr.Latest().get()
+exchange_rates = oxr.Latest().get()1
 
 
 def Euro(Wert, Währung):
@@ -125,7 +125,7 @@ def rate(ticker, mode):
         PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
-        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                          #geht noch nicht, marketcap ergänzen
+        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                                                   #evtl direkt holen
 
         ScoreMargeRound=round(MargeScore,2)
         ScoreLiquidityRound=round(LiquidityScore,2)
@@ -175,15 +175,14 @@ Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
 Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
 Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
 Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
-            print(Valuation[0])
 
-            if Valuation[1] == "undervalued" or "likely undervalued":
+            if Valuation[0] == "undervalued" or Valuation == "likely undervalued":
                 addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
                 newreturn= addreturn + normalreturn 
-                return newreturn
-                 
+                return(newreturn)
+                
             else:
-               return normalreturn
+                return normalreturn
 
             
             
@@ -195,8 +194,8 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
             else:
                 return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
             
-    #except:
-        #return "Ein Fehler ist aufgetreten."
+    except:
+        return "Ein Fehler ist aufgetreten."
 
 def switchkey():
     global api_key
