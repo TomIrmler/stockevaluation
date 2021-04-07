@@ -111,6 +111,7 @@ def rate(ticker, mode):
         dcf = Euro(DCF["DCF"], quote_currency)
         ebitdaratio = Euro(incomevor0["ebitdaratio"], statement_currency)
         eps = Euro(incomevor0["eps"], statement_currency)
+        marketcap = stockprice*sharesOutstanding
 
         MargeScore=rateMarge(ebitdaratio)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
@@ -124,6 +125,7 @@ def rate(ticker, mode):
         PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
+        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                          #geht noch nicht, marketcap ergänzen
 
         ScoreMargeRound=round(MargeScore,2)
         ScoreLiquidityRound=round(LiquidityScore,2)
@@ -159,7 +161,7 @@ def rate(ticker, mode):
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
         if mode == "compare":
-            return Gesamtscore
+            return [Gesamtscore, Valuation[0]]
         
         else:
             return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
@@ -181,8 +183,8 @@ Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRati
             else:
                 return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
             
-    except:
-        return "Ein Fehler ist aufgetreten."
+    #except:
+        #return "Ein Fehler ist aufgetreten."
 
 def switchkey():
     global api_key
@@ -200,30 +202,55 @@ def compare(tickerliste):
     flist = []
     highest = []
     returnstring = ""
+    undervalued = []
+    likelyUndervalued = []
 
     print("")
 
     for ticker in tickerliste:
-
         rating = [rate(ticker, "compare"), ticker]
+
         if rating[0] == "Ein Fehler ist aufgetreten.":
             rating[0] = "Fehler"
-        
-        elif rating[0] == "Alle API-Keys für FundamentalAnalysis sind aufgebraucht.":
-            return rating[0]
+            flist.append(rating)
             
-        flist.append(rating)
+        elif rating[0] == "Alle API Keys sind aufgebraucht.":
+            return rating[0]
+
+        else:
+            if rating [0][1] == "undervalued":
+                undervalued.append(rating)
+            
+            elif rating [0][1] == "likely undervalued":
+                likelyUndervalued.append(rating)
+
+            elif rating [0][1] == "neutral":
+                del rating [0][1]
+
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
-    flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
+    flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
     
-    highest = [rating for rating in flist if rating[0] == flist[0][0] and flist[0][0] != "Fehler"]
+    highest = [rating for rating in flist if rating[0][0] == flist[0][0][0] and flist[0][0][0] != "Fehler"]
     failed = [rating for rating in flist if rating[0] == "Fehler"]
-    flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]
+    flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]                               
 
     returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.".format(len(tickerliste), len(failed))
     returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
 
+    if len(undervalued) > 0:
+        returnstring += "Klar unterbewertete Unternehmen:\n"
+        for rating in undervalued:
+            returnstring += "{0}\t\t{1}\t\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
+        
+
+    if len(likelyUndervalued) > 0:
+        returnstring += "Wahrscheinlich unterbewertete Unternehmen:\n"
+        for rating in likelyUndervalued:
+            returnstring += "{0}\t\t{1}\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
+
+        returnstring += "\n"
+    
     for index, rating in enumerate(highest):
         if index == 0:
             returnstring += "\n"
@@ -259,7 +286,6 @@ def rateKGV(price, eps):
 
     return(score)
 
-
 def rateMarge(Marge): 
     schwellenwerte=[0.01,0.05,0.075,0.1,0.15,0.25,0.35]
     
@@ -277,7 +303,6 @@ def rateMarge(Marge):
             i+=1
 
     return(score)
-
 
 def rateLiquidity(volume, price):
     Liquidity=volume*price
@@ -298,7 +323,6 @@ def rateLiquidity(volume, price):
 
     return(score)
 
-
 def rateDividenyield(dividendpaid, shares, price):
     dividend=dividendpaid*(-1)/shares
     dividendyield=dividend/price
@@ -318,7 +342,6 @@ def rateDividenyield(dividendpaid, shares, price):
                 i+=1
 
     return(score)
-
 
 def rateUmsatz(umsatz):
 	schwellenwerte=[500000000,5000000000,15000000000,50000000000,120000000000,200000000000,250000000000,250000000000]
@@ -357,7 +380,6 @@ def rateEKQ(assets, liabilities):
 
     return(score)
 
-
 def rateDCFV(stockprice, dcf):
     DCFV = stockprice/dcf
     schwellenwerte=[1.5 ,1.3, 1.15, 1.075, 1, 0.9, 0.7, 0.4]
@@ -377,7 +399,6 @@ def rateDCFV(stockprice, dcf):
 
     return score
 
-
 def rateGewinnwachstum(gewinn, gewinnvor3):  
     GewinnWachstum=((gewinn-gewinnvor3)/gewinnvor3)/3
     schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55]
@@ -396,7 +417,6 @@ def rateGewinnwachstum(gewinn, gewinnvor3):
             i+=1
 
     return(score)
-
 
 def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
     KW=(price-pricevor1)/pricevor1
@@ -418,7 +438,6 @@ def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
             i+=1
 
     return(score)
-
 
 def ratePayoutRatio(dividendspaid,shares,eps, mode): 
     dividenden=dividendspaid*(-1)
@@ -447,7 +466,28 @@ def ratePayoutRatio(dividendspaid,shares,eps, mode):
             score-=1
             i+=1
 
-    return(score)    
+    return(score)   
+
+def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
+    gap = marketcap-(totalAssets-totalLiabilities)
+    valuePrice = (totalAssets-totalLiabilities)/sharesOutstanding
+    gapPercent = gap/marketcap
+
+    Valuation = []
+    if gap <= 0:
+        Valuation.append("undervalued")
+        Valuation.append(valuePrice)
+
+
+    elif gapPercent <= 0.05:
+        Valuation.append("likely undervalued")
+        Valuation.append(valuePrice)
+    
+    else: 
+        Valuation.append("neutral")
+        Valuation.append(valuePrice)
+
+    return Valuation 
 
 
 def showpreferences():  
