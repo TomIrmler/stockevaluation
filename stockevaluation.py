@@ -2,8 +2,9 @@
 #Gruppenarbeit von Le, Caspar und Tom (11A)
 
 import FundamentalAnalysis as fa
-import coinoxr as oxr
 from urllib.error import HTTPError
+from urllib.request import urlopen
+import json
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -60,16 +61,15 @@ fa_key_list = [
 ]
 fa_key_num = 0
 api_key = fa_key_list[0] 
-oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        
-
-exchange_rates = oxr.Latest().get()
+OXR = "https://openexchangerates.org/api/latest.json?app_id=dcbc87eb811b4fcba9e2293c86619bce"
+exchange_rates = json.loads(urlopen(OXR).read().decode("utf-8"))
 
 
 def Euro(Wert, Währung):
 
     global exchange_rates
-    USDtoEUR = exchange_rates.body["rates"]["EUR"]
-    USDtoWährung = exchange_rates.body["rates"][Währung]
+    USDtoEUR = exchange_rates["rates"]["EUR"]
+    USDtoWährung = exchange_rates["rates"][Währung]
     WertinEUR = Wert / USDtoWährung * USDtoEUR
     
     return WertinEUR
@@ -92,7 +92,7 @@ def rate(ticker, mode):
         statement_currency = incomevor0["reportedCurrency"]
         quote_currency = "USD" 
 
-        if statement_currency not in exchange_rates.body["rates"]:
+        if statement_currency not in exchange_rates["rates"]:
             return "Error: Die Zahlen der Aktie \"{0}\" sind in einer unbekannten Währung angegeben.".format(ticker)
 
         ebitda = Euro(incomevor0["ebitda"], statement_currency)  
