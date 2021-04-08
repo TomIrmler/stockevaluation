@@ -238,7 +238,9 @@ def compare(tickerliste):
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
-    
+    undervalued.sort(key=lambda score: score[0][0], reverse=True)
+    likelyUndervalued.sort(key=lambda score: score[0][0], reverse=True)
+
     highest = [rating for rating in flist if rating[0][0] == flist[0][0][0] and flist[0][0][0] != "Fehler"]
     failed = [rating for rating in flist if rating[0][0] == "Fehler"]
     flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]                               
@@ -255,7 +257,7 @@ def compare(tickerliste):
     if len(likelyUndervalued) > 0:
         returnstring += "\nWahrscheinlich unterbewertete Unternehmen:\n"
         for rating in likelyUndervalued:
-            returnstring += "{0}\t\t{1}\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
+            returnstring += "{0}\t\t{1}\t\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
 
         returnstring += "\n"
 
