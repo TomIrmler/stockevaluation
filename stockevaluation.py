@@ -610,7 +610,7 @@ Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
     except HTTPError as err:
         if err.code == 403:
             if switchkey() == True:
-                rate(ticker, mode)
+                return info(ticker)
             else:
                 return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
 
