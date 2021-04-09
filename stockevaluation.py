@@ -1,9 +1,10 @@
 #Mehr Informationen auf https://github.com/TomIrmler/stockevaluation
 #Gruppenarbeit von Le, Caspar und Tom (11A)
 
-import FundamentalAnalysis as fa
-import coinoxr as oxr
+import concurrent.futures
 from urllib.error import HTTPError
+from urllib.request import urlopen
+import json
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -59,40 +60,96 @@ fa_key_list = [
 "008ebc576253d43950dd0ea81590dfbd"
 ]
 fa_key_num = 0
-api_key = fa_key_list[0] #apikey noch einfügen
-oxr.app_id = "8da07fea22fb4d6d98f657bdcbcad0d5" #man hat 1000 Anfragen im Monat, sprich man kann das Programm 1000 Mal starten, dann halt anderes Konto.        apikey noch einfügen
-
-exchange_rates = oxr.Latest().get()
+api_key = fa_key_list[0] 
+OXR = "https://openexchangerates.org/api/latest.json?app_id=dcbc87eb811b4fcba9e2293c86619bce"
+exchange_rates = json.loads(urlopen(OXR).read().decode("utf-8"))
 
 
 def Euro(Wert, Währung):
 
     global exchange_rates
-    USDtoEUR = exchange_rates.body["rates"]["EUR"]
-    USDtoWährung = exchange_rates.body["rates"][Währung]
+    USDtoEUR = exchange_rates["rates"]["EUR"]
+    USDtoWährung = exchange_rates["rates"][Währung]
     WertinEUR = Wert / USDtoWährung * USDtoEUR
     
     return WertinEUR
 
+def get_data(ticker,mode, sdate = None, fdate = None):
+
+    def download(link):
+        try:
+            r = urlopen(link)
+            data = json.loads(r.read().decode("utf-8"))
+            if data == {'Error Message': 'Invalid API KEY. Please retry or visit our documentation to create one FREE https://financialmodelingprep.com/developer/docs'}:
+                return "Invalid Key"
+            return data
+
+        except HTTPError as err:
+            if err.code == 403:
+                return 403
+            else:
+                return "Fehler"
+                
+        except:
+            return "Fehler"
+
+    if mode == "rate":
+        quoteLink = "https://financialmodelingprep.com/api/v3/quote/" + ticker + "?apikey=" + api_key
+        balanceLink = "https://financialmodelingprep.com/api/v3/balance-sheet-statement/" + ticker + "?limit=1" + "&apikey=" + api_key
+        cashflowLink = "https://financialmodelingprep.com/api/v3/cash-flow-statement/" + ticker + "?limit=1" + "&apikey=" + api_key
+        DCFLink = "https://financialmodelingprep.com/api/v3/discounted-cash-flow/" + ticker + "?apikey=" + api_key
+        incomeLink = "https://financialmodelingprep.com/api/v3/income-statement/" + ticker + "?limit=4" + "&apikey=" + api_key
+        link_list = [quoteLink, balanceLink, cashflowLink, DCFLink, incomeLink]
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            threadlist = {executor.submit(download, link): link for link in link_list}
+        
+        results = [thread.result() for thread in threadlist]
+        
+    elif mode == "info": 
+        profileLink = "https://financialmodelingprep.com/api/v3/profile/" + ticker + "?apikey=" + api_key
+
+        results = [download(profileLink)]
+    
+    elif mode == "hprice":
+        hpriceLink = "https://financialmodelingprep.com/api/v3/historical-price-full/" + ticker +"?from=" + sdate + "&to=" + fdate + "&apikey=" + api_key
+
+        results = [download(hpriceLink)]
+
+    if 403 in results or "Invalid Key" in results:
+        if switchkey() == True:
+            return get_data(ticker, mode, sdate, fdate)
+        else:
+            return "kein API-Key"
+    elif "Fehler" in results:
+        return "Fehler"
+    else:
+        return results    
+
 
 def rate(ticker, mode):
 
-    global exchange_rates
-
     try:
-        quote = fa.quote(ticker, api_key)[0] 
-        incomeall = fa.income_statement(ticker, api_key, period="annual")
-        incomevor0 = incomeall.iloc[:,0] 
-        incomevor1 = incomeall.iloc[:,1]
-        incomevor3 = incomeall.iloc[:,3]
-        balance = fa.balance_sheet_statement(ticker, api_key, period="annual").iloc[:,0]
-        cashflow = fa.cash_flow_statement(ticker, api_key, period="annual").iloc[:,0]
-        DCF = fa.discounted_cash_flow(ticker, api_key).iloc[:,0]
+        global exchange_rates
+
+        data = get_data(ticker, "rate")
+        if data != "Fehler" and data != "kein API-Key":
+            quote = data[0][0]
+            balance = data[1][0]
+            cashflow = data[2][0]
+            DCF = data[3][0]
+            incomevor0 = data[4][0]
+            incomevor1 = data[4][1]
+            incomevor3 = data[4][3]
+        elif data == "kein API-Key":
+            return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
+        else:
+            return "Ein Fehler ist aufgetreten."
 
         statement_currency = incomevor0["reportedCurrency"]
         quote_currency = "USD" 
 
-        if statement_currency not in exchange_rates.body["rates"]:
+        if statement_currency not in exchange_rates["rates"]:
             return "Error: Die Zahlen der Aktie \"{0}\" sind in einer unbekannten Währung angegeben.".format(ticker)
 
         ebitda = Euro(incomevor0["ebitda"], statement_currency)  
@@ -102,15 +159,16 @@ def rate(ticker, mode):
         volume = quote["volume"]
         incomevor1day = incomevor1["acceptedDate"].split()[0]
         price = Euro(quote["price"], quote_currency)
-        pricevor1 = Euro(fa.stock_data_detailed(ticker, api_key, begin= incomevor1day, end = incomevor1day).iloc[0][0], quote_currency)
+        pricevor1 = Euro(get_data(ticker, mode = "hprice", sdate = incomevor1day, fdate = incomevor1day)[0]["historical"][0]["close"], quote_currency)
         dividendsPaid = Euro(cashflow["dividendsPaid"], statement_currency)
         sharesOutstanding = quote["sharesOutstanding"]
         totalAssets = Euro(balance["totalAssets"], statement_currency)
         totalLiabilities = Euro(balance["totalLiabilities"], statement_currency)
         stockprice = Euro(DCF["Stock Price"], quote_currency)
-        dcf = Euro(DCF["DCF"], quote_currency)
+        dcf = Euro(DCF["dcf"], quote_currency)
         ebitdaratio = Euro(incomevor0["ebitdaratio"], statement_currency)
         eps = Euro(incomevor0["eps"], statement_currency)
+        marketcap = stockprice*sharesOutstanding
 
         MargeScore=rateMarge(ebitdaratio)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
@@ -124,6 +182,7 @@ def rate(ticker, mode):
         PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
+        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                                                   #evtl direkt holen
 
         ScoreMargeRound=round(MargeScore,2)
         ScoreLiquidityRound=round(LiquidityScore,2)
@@ -159,30 +218,32 @@ def rate(ticker, mode):
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
         if mode == "compare":
-            return Gesamtscore
+            return [Gesamtscore, Valuation[0]]
         
         else:
-            return f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
-Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
-Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
-Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
-Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
-Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
-Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
-Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
-Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
-    
-    except HTTPError as err:
-        if err.code == 403:
-            if switchkey() == True:
-                return rate(ticker, mode)
+            normalreturn = f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
+    Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
+    Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
+    Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+    Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
+    Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
+    KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
+    Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
+    Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+    Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
+    Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+
+            if Valuation[0] == "undervalued" or Valuation[0] == "likely undervalued":
+                addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
+                newreturn= addreturn + normalreturn 
+                return(newreturn)
+                
             else:
-                return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
-            
+                return normalreturn
+
     except:
         return "Ein Fehler ist aufgetreten."
+
 
 def switchkey():
     global api_key
@@ -200,44 +261,74 @@ def compare(tickerliste):
     flist = []
     highest = []
     returnstring = ""
+    undervalued = []
+    likelyUndervalued = []
 
     print("")
 
     for ticker in tickerliste:
-
         rating = [rate(ticker, "compare"), ticker]
+
         if rating[0] == "Ein Fehler ist aufgetreten.":
-            rating[0] = "Fehler"
-        
-        elif rating[0] == "Alle API-Keys für FundamentalAnalysis sind aufgebraucht.":
-            return rating[0]
+            rating[0] = ["Fehler"]
             
+        elif rating[0][0] == "Alle API Keys sind aufgebraucht.":
+            return rating[0][0]
+
+        else:
+            if rating[0][1] == "undervalued":
+                undervalued.append(rating)
+            
+            elif rating[0][1] == "likely undervalued":
+                likelyUndervalued.append(rating)
+
+            elif rating[0][1] == "neutral":
+                del rating[0][1]
         flist.append(rating)
+
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
-    flist.sort(key=lambda x: x[0] if x[0] != "Fehler" else -10, reverse=True)
-    
-    highest = [rating for rating in flist if rating[0] == flist[0][0] and flist[0][0] != "Fehler"]
-    failed = [rating for rating in flist if rating[0] == "Fehler"]
-    flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]
+    flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
+    undervalued.sort(key=lambda score: score[0][0], reverse=True)
+    likelyUndervalued.sort(key=lambda score: score[0][0], reverse=True)
 
-    returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.".format(len(tickerliste), len(failed))
-    returnstring += "\n\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
+    highest = [rating for rating in flist if rating[0][0] == flist[0][0][0] and flist[0][0][0] != "Fehler"]
+    failed = [rating for rating in flist if rating[0][0] == "Fehler"]
+    flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]                               
+
+    returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.\n".format(len(tickerliste), len(failed))
+
+    if len(undervalued) > 0:
+        returnstring += "\nKlar unterbewertete Unternehmen:\n"
+        for rating in undervalued:
+            returnstring += "{0}\t\t{1}\t\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
+
+        returnstring += "\n"
+
+    if len(likelyUndervalued) > 0:
+        returnstring += "\nWahrscheinlich unterbewertete Unternehmen:\n"
+        for rating in likelyUndervalued:
+            returnstring += "{0}\t\t{1}\t\t{2}\n".format(rating[1], rating[0][0], rating[0][1])
+
+        returnstring += "\n"
+
+   
+    returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
 
     for index, rating in enumerate(highest):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0])
-    
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0][0])
+
     for index, rating in enumerate(flist):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0])
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0][0])
 
     for index, rating in enumerate(failed):
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0])
+        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0][0])
 
     return returnstring
 
@@ -259,7 +350,6 @@ def rateKGV(price, eps):
 
     return(score)
 
-
 def rateMarge(Marge): 
     schwellenwerte=[0.01,0.05,0.075,0.1,0.15,0.25,0.35]
     
@@ -277,7 +367,6 @@ def rateMarge(Marge):
             i+=1
 
     return(score)
-
 
 def rateLiquidity(volume, price):
     Liquidity=volume*price
@@ -298,7 +387,6 @@ def rateLiquidity(volume, price):
 
     return(score)
 
-
 def rateDividenyield(dividendpaid, shares, price):
     dividend=dividendpaid*(-1)/shares
     dividendyield=dividend/price
@@ -318,7 +406,6 @@ def rateDividenyield(dividendpaid, shares, price):
                 i+=1
 
     return(score)
-
 
 def rateUmsatz(umsatz):
 	schwellenwerte=[500000000,5000000000,15000000000,50000000000,120000000000,200000000000,250000000000,250000000000]
@@ -357,7 +444,6 @@ def rateEKQ(assets, liabilities):
 
     return(score)
 
-
 def rateDCFV(stockprice, dcf):
     DCFV = stockprice/dcf
     schwellenwerte=[1.5 ,1.3, 1.15, 1.075, 1, 0.9, 0.7, 0.4]
@@ -377,7 +463,6 @@ def rateDCFV(stockprice, dcf):
 
     return score
 
-
 def rateGewinnwachstum(gewinn, gewinnvor3):  
     GewinnWachstum=((gewinn-gewinnvor3)/gewinnvor3)/3
     schwellenwerte=[0,0.05,0.1,0.15,0.25,0.4,0.55]
@@ -396,7 +481,6 @@ def rateGewinnwachstum(gewinn, gewinnvor3):
             i+=1
 
     return(score)
-
 
 def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
     KW=(price-pricevor1)/pricevor1
@@ -418,7 +502,6 @@ def rateKWGWV(price, pricevor1, gewinn, gewinnvor1):
             i+=1
 
     return(score)
-
 
 def ratePayoutRatio(dividendspaid,shares,eps, mode): 
     dividenden=dividendspaid*(-1)
@@ -447,12 +530,33 @@ def ratePayoutRatio(dividendspaid,shares,eps, mode):
             score-=1
             i+=1
 
-    return(score)    
+    return(score)   
+
+def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
+    gap = marketcap-(totalAssets-totalLiabilities)
+    valuePrice = (totalAssets-totalLiabilities)/sharesOutstanding
+    gapPercent = gap/marketcap
+
+    Valuation = []
+    if gap <= 0:
+        Valuation.append("undervalued")
+        Valuation.append(valuePrice)
+
+
+    elif gapPercent <= 0.1:
+        Valuation.append("likely undervalued")
+        Valuation.append(valuePrice)
+    
+    else: 
+        Valuation.append("neutral")
+        Valuation.append(valuePrice)
+
+    return Valuation 
 
 
 def showpreferences():  
 
-    print("\nDas ist die aktuelle Gewichtung der Kennzahlen in ihrem Score:\n")
+    print("\nDas ist die aktuelle Gewichtung der Kennzahlen in Ihrem Score:\n")
     print("KGV\t\t\t\t{0}%".format(weight_KGV*100))
     print("Ebitda-Marge\t\t\t{0}%".format(weight_BruttoMarge*100))
     print("Eigenkapitalquote\t\t{0}%".format(weight_EKQ*100))
@@ -460,7 +564,7 @@ def showpreferences():
     print("Umsatz\t\t\t\t{0}%".format(weight_Umsatz*100))
     print("Aktienliquidität\t\t{0}%".format(weight_Aktienliquidität*100))
     print("Kurs-zu-DCF-Verhältnis\t\t{0}%".format(weight_DCFV*100))
-    print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_Gewinnwachstum*100))
+    print("Kurswachstum zu Gewinnwachstum\t{0}%".format(weight_KWGWV*100))
     print("Payout-Ratio\t\t\t{0}%".format(weight_PoR*100))
     print("Gewinnwachstum\t\t\t{0}%\n".format(weight_Gewinnwachstum*100))
    
@@ -523,30 +627,36 @@ def setpreferences():
         print("")
 
     else:
-        print("Die Summe Ihrer Prozentangaben liegt über 100. Ihre Eingaben wurden nicht übernommen.\n")
+        print("Die Summe Ihrer Prozentangaben liegt nicht bei genau 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
 def info(ticker):
 
-    try:
-        profile = fa.profile(ticker, api_key)[0]
+    
+    data = get_data(ticker, "info")
+    if data != "Fehler" and data != "kein API-Key":
+        profile = data[0][0]
+    elif data == "kein API-Key":
+        return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
+    else:
+        return "Es ist ein Fehler aufgetreten."
 
-        symbol = ticker
-        name = profile["companyName"]
-        exchangeShortName = profile["exchangeShortName"]
-        sector = profile["sector"]
-        fullTimeEmployees = profile["fullTimeEmployees"]
-        ceo = profile["ceo"]
-        address = profile["address"]
-        city = profile["city"]
-        state = profile["state"]
-        country = profile["country"]
-        ipo = profile["ipoDate"].split("-")
-        ipoYear = ipo[0]
-        ipoMonth = ipo[1]
-        ipoDay = ipo[2]
+    symbol = ticker
+    name = profile["companyName"]
+    exchangeShortName = profile["exchangeShortName"]
+    sector = profile["sector"]
+    fullTimeEmployees = profile["fullTimeEmployees"]
+    ceo = profile["ceo"]
+    address = profile["address"]
+    city = profile["city"]
+    state = profile["state"]
+    country = profile["country"]
+    ipo = profile["ipoDate"].split("-")
+    ipoYear = ipo[0]
+    ipoMonth = ipo[1]
+    ipoDay = ipo[2]
 
-        return f"""\nTicker\t\t\t\t{symbol}
+    return f"""\nTicker\t\t\t\t{symbol}
 Name\t\t\t\t{name}
 Exchange\t\t\t{exchangeShortName}
 Sektor\t\t\t\t{sector}
@@ -556,15 +666,7 @@ Adresse\t\t\t\t{address}
 Stadt\t\t\t\t{city}, {state}, {country}
 Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
-    except HTTPError as err:
-        if err.code == 403:
-            if switchkey() == True:
-                rate(ticker, mode)
-            else:
-                return "Alle API-Keys für FundamentalAnalysis sind aufgebraucht."
 
-    except:
-        return "Ein Fehler ist aufgetreten."
 
 
 
