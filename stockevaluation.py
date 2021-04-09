@@ -5,7 +5,6 @@ import concurrent.futures
 from urllib.error import HTTPError
 from urllib.request import urlopen
 import json
-import time
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -94,7 +93,7 @@ def get_data(ticker,mode, sdate = None, fdate = None):
         except:
             return "Fehler"
 
-    #time1 = time.perf_counter()
+    
 
     if mode == "rate":
         quoteLink = "https://financialmodelingprep.com/api/v3/quote/" + ticker + "?apikey=" + api_key
@@ -119,8 +118,7 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 
         results = [download(hpriceLink)]
     
-    #time2 = time.perf_counter()
-    #print(time2-time1)
+    
 
     if "403 Error" in results or "Invalid Key" in results:
         if switchkey() == True:
@@ -135,7 +133,6 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 
 def rate(ticker, mode):
 
-    time1 = time.perf_counter()
     try:
         global exchange_rates
 
@@ -224,8 +221,7 @@ def rate(ticker, mode):
         nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
-        time2 = time.perf_counter()
-        print(time2-time1)
+        
         if mode == "compare":
             return [Gesamtscore, Valuation[0]]
         
