@@ -5,6 +5,7 @@ import concurrent.futures
 from urllib.error import HTTPError
 from urllib.request import urlopen
 import json
+import time
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -86,12 +87,14 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 
         except HTTPError as err:
             if err.code == 403:
-                return 403
+                return "403 Error"
             else:
                 return "Fehler"
                 
         except:
             return "Fehler"
+
+    #time1 = time.perf_counter()
 
     if mode == "rate":
         quoteLink = "https://financialmodelingprep.com/api/v3/quote/" + ticker + "?apikey=" + api_key
@@ -115,8 +118,11 @@ def get_data(ticker,mode, sdate = None, fdate = None):
         hpriceLink = "https://financialmodelingprep.com/api/v3/historical-price-full/" + ticker +"?from=" + sdate + "&to=" + fdate + "&apikey=" + api_key
 
         results = [download(hpriceLink)]
+    
+    #time2 = time.perf_counter()
+    #print(time2-time1)
 
-    if 403 in results or "Invalid Key" in results:
+    if "403 Error" in results or "Invalid Key" in results:
         if switchkey() == True:
             return get_data(ticker, mode, sdate, fdate)
         else:
@@ -129,6 +135,7 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 
 def rate(ticker, mode):
 
+    time1 = time.perf_counter()
     try:
         global exchange_rates
 
@@ -168,7 +175,7 @@ def rate(ticker, mode):
         dcf = Euro(DCF["dcf"], quote_currency)
         ebitdaratio = Euro(incomevor0["ebitdaratio"], statement_currency)
         eps = Euro(incomevor0["eps"], statement_currency)
-        marketcap = stockprice*sharesOutstanding
+        marketcap = Euro(quote["marketCap"], quote_currency)
 
         MargeScore=rateMarge(ebitdaratio)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
@@ -217,21 +224,23 @@ def rate(ticker, mode):
         nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
+        time2 = time.perf_counter()
+        print(time2-time1)
         if mode == "compare":
             return [Gesamtscore, Valuation[0]]
         
         else:
             normalreturn = f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-    Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
-    Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
-    Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
-    Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
-    Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
-    KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
-    Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
-    Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
-    Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
-    Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
+Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
+Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
+Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
+Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
+KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
+Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
+Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
+Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
+Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
 
             if Valuation[0] == "undervalued" or Valuation[0] == "likely undervalued":
                 addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
@@ -240,6 +249,9 @@ def rate(ticker, mode):
                 
             else:
                 return normalreturn
+
+    except KeyboardInterrupt:
+        return "\nUnterbrochen"
 
     except:
         return "Ein Fehler ist aufgetreten."
@@ -257,6 +269,7 @@ def switchkey():
     except IndexError:
         return False 
 
+
 def compare(tickerliste):
     flist = []
     highest = []
@@ -267,6 +280,7 @@ def compare(tickerliste):
     print("")
 
     for ticker in tickerliste:
+
         rating = [rate(ticker, "compare"), ticker]
 
         if rating[0] == "Ein Fehler ist aufgetreten.":
@@ -274,6 +288,9 @@ def compare(tickerliste):
             
         elif rating[0][0] == "Alle API Keys sind aufgebraucht.":
             return rating[0][0]
+
+        elif rating[0] == "\nUnterbrochen":
+            return rating[0]
 
         else:
             if rating[0][1] == "undervalued":
