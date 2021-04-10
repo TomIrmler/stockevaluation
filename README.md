@@ -44,6 +44,10 @@ Setzt Kurswachstum und EBITDA-Wachstum ins Verhältnis. Es lässt sich ableiten,
 <h4>Payout-Ratio:</h4>
 Setzt gezahlte Dividende und Gewinne (nach Steuer; "Gewinn pro Aktie") des Unternehmens ins Verhältnis. Es lässt sich ableiten, wieviel Prozent des Gewinns das Unternehemen auszahlt und wieviel Kapital für eventuelle Rücklagen oder Investitionen verbleiben.<br>
 
+<h4>Rating: undervalued, likely undervalued</h4>
+Diese Einstufung stellt das Anlagevermögen eines Unternehmens (abzüglich der Schulden) seiner Marktkapitalisierung. Ist das Anlagevermögen abzüglich der Schulden höher als die Marktkapitalisierung, so wird dieses Unternehmen als "undervalued" eingestuft, weil es offensichtlich eine fundamentale Bewertungslücke gibt. Ist die Marktkapitalisierung zwar höher als das Anlagevermögen abzüglich der Schulden, überschreiet die Lücke aber nicht 10% der Marktkapitalisierung, so wird das Unternehmen als "likely undervalued" eingestuft. 
+Es ist zu beachten, dass diese Einstufung auf simplen fundamentalen Kennzahlen beruht und noch keine zukünftigen Ereignisse eingepriesen sind. Das Rating macht lediglich auf eine Bewertungslücke (gemessen am Anlagevermögen) aufmerksam (undervalued) oder auf eine geringe Lücke zu dem Preis, bei dem die Bewertung durch das Anlagevermögen gedeckt ist (likely undervalued). Außerdem ist zu beachten, dass diese Art der Bewertung keinen Umkehrschluss auf Unternehmen mit gegenteiligen Tendenzen erlaubt, da die Deckung der Bewertung durch Anlagevermögen sektorabhängig ist.
+
 
 
 
