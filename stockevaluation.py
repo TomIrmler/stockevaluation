@@ -1,10 +1,11 @@
-#Gruppenarbeit von Le, Caspar und Tom (11A)
 #Mehr Informationen auf https://github.com/TomIrmler/stockevaluation
+#Gruppenarbeit von Le, Caspar und Tom (11A)
 
 import concurrent.futures
 from urllib.error import HTTPError
 from urllib.request import urlopen
 import json
+import time
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -74,6 +75,7 @@ def Euro(Wert, Währung):
     
     return WertinEUR
 
+
 def get_data(ticker,mode, sdate = None, fdate = None):
 
     def download(link):
@@ -93,7 +95,6 @@ def get_data(ticker,mode, sdate = None, fdate = None):
         except:
             return "Fehler"
 
-    
 
     if mode == "rate":
         quoteLink = "https://financialmodelingprep.com/api/v3/quote/" + ticker + "?apikey=" + api_key
@@ -118,15 +119,17 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 
         results = [download(hpriceLink)]
     
-    
 
     if "403 Error" in results or "Invalid Key" in results:
+
         if switchkey() == True:
             return get_data(ticker, mode, sdate, fdate)
         else:
             return "kein API-Key"
+
     elif "Fehler" in results:
         return "Fehler"
+
     else:
         return results    
 
@@ -145,8 +148,10 @@ def rate(ticker, mode):
             incomevor0 = data[4][0]
             incomevor1 = data[4][1]
             incomevor3 = data[4][3]
+        
         elif data == "kein API-Key":
             return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
+        
         else:
             return "Ein Fehler ist aufgetreten."
 
@@ -221,22 +226,21 @@ def rate(ticker, mode):
         nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
         nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
-        
         if mode == "compare":
             return [Gesamtscore, Valuation[0]]
         
         else:
             normalreturn = f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
-Ebitda-Marge ({nomMarge}%)\t\t\t\t{ScoreMargeRound} / {maxMarge}
-Aktienliquidität ({nomLiquidity} mio.)\t\t\t{ScoreLiquidityRound} / {maxLiquidity}
-Dividendenrendite ({nomdividendyield}%)\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}
-Umsatzgröße ({nomUmsatz} mio.)\t\t\t{ScoreUmsatzRound} / {maxUmsatz}
-Eigenkapitalquote ({nomEKQ}%)\t\t\t{ScoreEKQRound} / {maxEKQ}
-KGV ({nomKGV})\t\t\t\t\t{ScoreKGVRound} / {maxKGV}
-Kurs-DCF-Verhältnis ({nomDCF})\t\t\t{ScoreDCFRound} / {maxDCF}
-Ø-Ebitda Wachstum p.a. ({nomGewinnwachstum}%)\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}
-Kurswachstum zu Gewinnwachstum ({nomKWGWV})\t\t{ScoreKWGWVRound} / {maxKWGWV}
-Payout-Ratio ({nomPayoutRatio}%)\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\n"""
+Ebitda-Marge\t\t\t\t{ScoreMargeRound} / {maxMarge}\t({nomMarge}%)
+Aktienliquidität\t\t\t{ScoreLiquidityRound} / {maxLiquidity}\t({nomLiquidity} mio.)
+Dividendenrendite\t\t\t{ScoreDividendyieldRound} / {maxDividendyield}\t({nomdividendyield}%)
+Umsatzgröße\t\t\t\t{ScoreUmsatzRound} / {maxUmsatz}\t({nomUmsatz} mio.)
+Eigenkapitalquote\t\t\t{ScoreEKQRound} / {maxEKQ}\t({nomEKQ}%)
+KGV\t\t\t\t\t{ScoreKGVRound} / {maxKGV}\t({nomKGV})
+Kurs-DCF-Verhältnis\t\t\t{ScoreDCFRound} / {maxDCF}\t({nomDCF})
+Ø-Ebitda Wachstum p.a.\t\t\t{ScoreGewinnwachstumRound} / {maxGewinnwachstum}\t({nomGewinnwachstum}%)
+Kurswachstum zu Gewinnwachstum\t\t{ScoreKWGWVRound} / {maxKWGWV}\t({nomKWGWV})
+Payout-Ratio\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\t({nomPayoutRatio}%)\n"""
 
             if Valuation[0] == "undervalued" or Valuation[0] == "likely undervalued":
                 addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
@@ -297,8 +301,8 @@ def compare(tickerliste):
 
             elif rating[0][1] == "neutral":
                 del rating[0][1]
-        flist.append(rating)
 
+        flist.append(rating)
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
@@ -325,26 +329,27 @@ def compare(tickerliste):
 
         returnstring += "\n"
 
-   
     returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
 
     for index, rating in enumerate(highest):
+        tabs = 2 if len(rating[1]) <= 4 else 1
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1, rating[1], rating[0][0])
+        returnstring += "{0}. {1}{2}{3}\n".format(index+1, rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(flist):
+        tabs = 2 if len(rating[1]) <= 4 else 1
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest), rating[1], rating[0][0])
+        returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest), rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(failed):
+        tabs = 2 if len(rating[1]) <= 4 else 1
         if index == 0:
             returnstring += "\n"
-        returnstring += "{0}. {1}\t\t{2}\n".format(index+1+len(highest)+len(flist), rating[1], rating[0][0])
+        returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest)+len(flist), rating[1], "\t"*tabs, rating[0][0])
 
     return returnstring
-
 
 
 def rateKGV(price, eps):  
@@ -555,7 +560,6 @@ def FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding):
         Valuation.append("undervalued")
         Valuation.append(valuePrice)
 
-
     elif gapPercent <= 0.1:
         Valuation.append("likely undervalued")
         Valuation.append(valuePrice)
@@ -611,7 +615,7 @@ def setpreferences():
             total -= new_weights[i]
             i += 1
         except:
-            print("\nGeben Sie bitte eine ZAHL ein.\n")
+            print("\nGeben Sie bitte eine ZAHL ein. (Komma = Punkt).\n")
             
     if  sum(new_weights) == 100:
 
@@ -645,7 +649,6 @@ def setpreferences():
 
 def info(ticker):
 
-    
     data = get_data(ticker, "info")
     if data != "Fehler" and data != "kein API-Key":
         profile = data[0][0]
@@ -682,7 +685,6 @@ Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
 
 
-
 weight_KGV = 1/10
 weight_BruttoMarge = 1/10
 weight_EKQ = 1/10
@@ -697,7 +699,7 @@ weight_Gewinnwachstum = 1/10
 running = True
 
 try:
-    print("""\n\nDer Aktienbewerter bewertet eine Aktie nach personalisiert gewichtbaren Kennzahlen. Die Interpretation dieser Kennzahlen
+    print("""\n\nDer Aktienbewerter bewertet eine Aktie nach persönlich gewichtbaren Kennzahlen. Die Interpretation dieser Kennzahlen
 (was gut und was schlecht ist) sieht Value-Unternehmen mit hoher Dividendenrendite als ideal an. \nDer höchste Score liegt bei 800.
 Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
@@ -717,20 +719,20 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
                 showpreferences()
 
             elif input_main[0] == "rate":
-                if len(input_main) == 2:
+                if len(input_main) == 1:
+                    print('Geben Sie mindestens ein Ticker Symbol hinter "rate" ein. (z.B. AAPL, TSLA)')
+                
+                elif len(input_main) == 2:
                     print(rate(input_main[1], "rate"))
-		
-                elif len(input_main) == 1:
-                    print('Geben Sie ein Ticker Symbol hinter "rate" ein.')
 
-                else:
+                elif len(input_main) > 2:
                     print(compare(input_main[1:]))
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
                     print(info(input_main[1]))
                 else:
-                    print('Geben Sie EIN Ticker Symbol hinter "info" ein.')
+                    print('Geben Sie EIN Ticker Symbol hinter "info" ein. (z.B. AAPL, TSLA)')
 
             elif input_main[0] == "hilfe":
                 helppage()
