@@ -84,7 +84,10 @@ def get_data(ticker,mode, sdate = None, fdate = None):
             data = json.loads(r.read().decode("utf-8"))
             if data == {'Error Message': 'Invalid API KEY. Please retry or visit our documentation to create one FREE https://financialmodelingprep.com/developer/docs'}:
                 return "Invalid Key"
-            return data
+            elif data == []:
+                return "Fehler"
+            else:
+                return data
 
         except HTTPError as err:
             if err.code == 403:
@@ -140,7 +143,14 @@ def rate(ticker, mode):
         global exchange_rates
 
         data = get_data(ticker, "rate")
-        if data != "Fehler" and data != "kein API-Key":
+        
+        if data == "Fehler":
+            return "Ein Fehler ist aufgetreten."
+
+        elif data == "kein API-Key":
+            return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
+
+        else:
             quote = data[0][0]
             balance = data[1][0]
             cashflow = data[2][0]
@@ -148,12 +158,6 @@ def rate(ticker, mode):
             incomevor0 = data[4][0]
             incomevor1 = data[4][1]
             incomevor3 = data[4][3]
-        
-        elif data == "kein API-Key":
-            return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
-        
-        else:
-            return "Ein Fehler ist aufgetreten."
 
         statement_currency = incomevor0["reportedCurrency"]
         quote_currency = "USD" 
@@ -529,7 +533,7 @@ def ratePayoutRatio(dividendspaid,shares,eps, mode):
     
     if dividendspaid==0:
         if mode != "compare":
-            print("\nDa keine Dividende gezahlt wurde, wurde bei eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
+            print("\nDa keine Dividende gezahlt wurde, wurde eine mittlere Einstufung des Payout-Ratio vorgenommen. Ändern Sie am besten die Gewichtung auf 0.")
         return 4
 
     elif PoR>=0.8:
@@ -588,8 +592,14 @@ def showpreferences():
 
 def helppage():
 
-    print("""\nDas ist die Anleitung zu unserem Programm:\n\nset\t\t\t\t\t- Kennzahlen gewichten\nshow\t\t\t\t\t- aktuelle Gewichtung anzeigen
-rate + <Ticker Symbol>\t\t\t- Rating durchführen\nrate + <mehrere Ticker Symbole>\t\t- Aktien vergleichen\ninfo + <Ticker Symbol>\t\t\t- Informationen anzeigen\nende\t\t\t\t\t- Programm beenden\n""")
+    print("""\nDas ist die Anleitung zu unserem Programm:\n
+set\t\t\t\t\t- Kennzahlen gewichten
+show\t\t\t\t\t- aktuelle Gewichtung anzeigen
+rate + <Ticker Symbol>\t\t\t- Rating durchführen
+rate + <mehrere Ticker Symbole>\t\t- Aktien vergleichen
+info + <Ticker Symbol>\t\t\t- Informationen anzeigen
+sum  + <Ticker Symbol>\t\t\t- Zusammenfassung anzeigen
+ende\t\t\t\t\t- Programm beenden\n""")
 
 
 def askforpref(k_index, total):
@@ -647,40 +657,47 @@ def setpreferences():
         print("Die Summe Ihrer Prozentangaben liegt nicht bei genau 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
-def info(ticker):
+def info(ticker, mode):
 
     data = get_data(ticker, "info")
-    if data != "Fehler" and data != "kein API-Key":
-        profile = data[0][0]
+    if data == "Fehler":
+        return "Es ist ein Fehler aufgetreten."
     elif data == "kein API-Key":
         return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
     else:
-        return "Es ist ein Fehler aufgetreten."
+        profile = data[0][0]
+        
+    if mode == "info":
+        symbol = ticker
+        name = profile["companyName"]
+        exchangeShortName = profile["exchangeShortName"]
+        sector = profile["sector"]
+        industry = profile["industry"]
+        fullTimeEmployees = profile["fullTimeEmployees"]
+        ceo = profile["ceo"]
+        address = profile["address"]
+        city = profile["city"]
+        state = profile["state"]
+        country = profile["country"]
+        ipo = profile["ipoDate"].split("-")
+        ipoYear = ipo[0]
+        ipoMonth = ipo[1]
+        ipoDay = ipo[2]
 
-    symbol = ticker
-    name = profile["companyName"]
-    exchangeShortName = profile["exchangeShortName"]
-    sector = profile["sector"]
-    fullTimeEmployees = profile["fullTimeEmployees"]
-    ceo = profile["ceo"]
-    address = profile["address"]
-    city = profile["city"]
-    state = profile["state"]
-    country = profile["country"]
-    ipo = profile["ipoDate"].split("-")
-    ipoYear = ipo[0]
-    ipoMonth = ipo[1]
-    ipoDay = ipo[2]
-
-    return f"""\nTicker\t\t\t\t{symbol}
+        return f"""\nTicker\t\t\t\t{symbol}
 Name\t\t\t\t{name}
 Exchange\t\t\t{exchangeShortName}
 Sektor\t\t\t\t{sector}
+Industriezweig\t\t\t{industry}
 Mitarbeiter\t\t\t{fullTimeEmployees}
 CEO\t\t\t\t{ceo}
 Adresse\t\t\t\t{address}
 Stadt\t\t\t\t{city}, {state}, {country}
 Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
+
+    else:
+        description = profile["description"]
+        return str("\n" + description + "\n")
 
 
 
@@ -730,9 +747,15 @@ Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
             elif input_main[0] == "info":
                 if len(input_main) == 2:
-                    print(info(input_main[1]))
+                    print(info(input_main[1], "info"))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "info" ein. (z.B. AAPL, TSLA)')
+                
+            elif input_main[0] == "sum":
+                if len(input_main) == 2:
+                    print(info(input_main[1], "sum"))
+                else:
+                    print('Geben Sie EIN Ticker Symbol hinter "sum" ein. (z.B. AAPL, TSLA)')
 
             elif input_main[0] == "hilfe":
                 helppage()
