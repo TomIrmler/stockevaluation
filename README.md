@@ -1,7 +1,7 @@
 <h1>stockevaluation</h1>
 
 <h3>Vorraussetzungen</h3>
-Für das Benutzen der stockevalation_fa.py müssen Sie über den pip-Installer die Librarie FundamentalAnalysis (*pip install FundamentalAnalysis*) installieren. Für alle anderen Dateien (stockevaluation.py) brauchen sie keine weiteren Libraries zu installieren.
+Für das Benutzen der stockevalation_fa.py müssen Sie über den pip-Installer die Librarie FundamentalAnalysis (*pip install FundamentalAnalysis*) installieren. Für alle anderen Dateien brauchen sie keine weiteren Libraries zu installieren.
 
 <h3>Grundlegendes</h3>
 Der Aktienbewerter bewertet Aktien anhand von 10 Kennzahlen. Es wird ein Gesamtscore aus den erreichten Scores der verschiedenen Kennzahlen errechnet, wobei der höchste erreichbare Score bei 800 liegt. Die 10 verschiedenen Kennzahlen lassen sich je nach individuellen Präferenzen gewichten. Auf die Anpassbarkeit der Interpretation der Kennzahlen, also welcher Wert bei welcher Kennzahl welchen Score erreicht, wurde verzichtet, da der nötige Aufwand nicht mit dem Ziel eines schnellen Überblicks über die Qualität verschiedener Aktien vereinbar ist. Die festgelegte Interpretation der Kennzahlen sieht fundamental kerngesunde,wachsende und große sowie günstig bis moderat bewertete Unternehmen, mit hoher Dividendenrendite bei geringem Payout-Ratio als Ideal an (Value-Investing). Die genauen Intervalle der Interpretation kann der beiliegenden CSV-Tabelle entnommen werden. Es ist zu beachten, dass momentan leider nur Aktien bewertet werden können, die am NewYorkStockExchange notieren.
