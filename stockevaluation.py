@@ -598,7 +598,7 @@ show\t\t\t\t\t- aktuelle Gewichtung anzeigen
 rate + <Ticker Symbol>\t\t\t- Rating durchführen
 rate + <mehrere Ticker Symbole>\t\t- Aktien vergleichen
 info + <Ticker Symbol>\t\t\t- Informationen anzeigen
-sum  + <Ticker Symbol>\t\t\t- Zusammenfassung anzeigen
+sum  + <Ticker Symbol>\t\t\t- Kurzbeschreibung anzeigen
 ende\t\t\t\t\t- Programm beenden\n""")
 
 
@@ -687,7 +687,7 @@ def info(ticker, mode):
         return f"""\nTicker\t\t\t\t{symbol}
 Name\t\t\t\t{name}
 Exchange\t\t\t{exchangeShortName}
-Sektor\t\t\t\t{sector}
+Branche\t\t\t\t{sector}
 Industriezweig\t\t\t{industry}
 Mitarbeiter\t\t\t{fullTimeEmployees}
 CEO\t\t\t\t{ceo}
