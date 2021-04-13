@@ -1,10 +1,10 @@
 <h1>stockevaluation</h1>
 
 <h3>Vorraussetzungen</h3>
-Für das Benutzen der stockevalation_fa.py müssen Sie über den pip-Installer die Librarie FundamentalAnalysis (*pip install FundamentalAnalysis*) installieren. Für alle anderen Dateien brauchen sie keine weiteren Libraries zu installieren.
+Für das Benutzen der stockevalation_fa.py müssen Sie über den pip-Installer die Library FundamentalAnalysis (*pip install FundamentalAnalysis*) installieren. Für alle anderen Dateien brauchen sie keine weiteren Libraries zu installieren.
 
 <h3>Grundlegendes</h3>
-Der Aktienbewerter bewertet Aktien anhand von 10 Kennzahlen. Es wird ein Gesamtscore aus den erreichten Scores der verschiedenen Kennzahlen errechnet, wobei der höchste erreichbare Score bei 800 liegt. Die 10 verschiedenen Kennzahlen lassen sich je nach individuellen Präferenzen gewichten. Auf die Anpassbarkeit der Interpretation der Kennzahlen, also welcher Wert bei welcher Kennzahl welchen Score erreicht, wurde verzichtet, da der nötige Aufwand nicht mit dem Ziel eines schnellen Überblicks über die Qualität verschiedener Aktien vereinbar ist. Die festgelegte Interpretation der Kennzahlen sieht fundamental kerngesunde,wachsende und große sowie günstig bis moderat bewertete Unternehmen, mit hoher Dividendenrendite bei geringem Payout-Ratio als Ideal an (Value-Investing). Die genauen Intervalle der Interpretation kann der beiliegenden CSV-Tabelle entnommen werden. Es ist zu beachten, dass momentan leider nur Aktien bewertet werden können, die am NewYorkStockExchange notieren.
+Der Aktienbewerter bewertet Aktien anhand von 10 Kennzahlen. Es wird ein Gesamtscore aus den erreichten Scores der verschiedenen Kennzahlen errechnet, wobei der höchste erreichbare Score bei 800 liegt. Die 10 verschiedenen Kennzahlen lassen sich je nach individuellen Präferenzen gewichten. Auf die Anpassbarkeit der Interpretation der Kennzahlen, also welcher Wert bei welcher Kennzahl welchen Score erreicht, wurde verzichtet, da der nötige Aufwand nicht mit dem Ziel eines schnellen Überblicks über die Qualität verschiedener Aktien vereinbar ist. Die festgelegte Interpretation der Kennzahlen sieht fundamental kerngesunde, wachsende und große sowie günstig bis moderat bewertete Unternehmen, mit hoher Dividendenrendite bei geringem Payout-Ratio als Ideal an (Value-Investing). Die genauen Intervalle der Interpretation kann der beiliegenden CSV-Tabelle entnommen werden. Es ist zu beachten, dass momentan leider nur Aktien bewertet werden können, die am NewYorkStockExchange notieren.
 Neben dem Score können grundlegende Informationen zu Unternehmen angezeigt werden. 
 
 <b>Es ist zu beachten, dass das Ziel des Aktienbewerters, wie angedeutet, ist, eine Einschätzung zu treffen, ob es sich lohnt, eine tiefere Analyse anzugehen. Der errechnete Score sollte also nicht als volle Fundamentalanalyse angesehen werden, ist somit also auch keiner Anlageberatung, insbesondere keiner persönlichen Anlageberatung, gleichzusetzen.</b>
@@ -47,15 +47,3 @@ Setzt gezahlte Dividende und Gewinne (nach Steuer; "Gewinn pro Aktie") des Unter
 <h4>Rating: undervalued, likely undervalued</h4>
 Diese Einstufung stellt das Anlagevermögen eines Unternehmens (abzüglich der Schulden) seiner Marktkapitalisierung. Ist das Anlagevermögen abzüglich der Schulden höher als die Marktkapitalisierung, so wird dieses Unternehmen als "undervalued" eingestuft, weil es offensichtlich eine fundamentale Bewertungslücke gibt. Ist die Marktkapitalisierung zwar höher als das Anlagevermögen abzüglich der Schulden, überschreiet die Lücke aber nicht 10% der Marktkapitalisierung, so wird das Unternehmen als "likely undervalued" eingestuft. 
 Es ist zu beachten, dass diese Einstufung auf simplen fundamentalen Kennzahlen beruht und noch keine zukünftigen Ereignisse eingepriesen sind. Das Rating macht lediglich auf eine Bewertungslücke (gemessen am Anlagevermögen) aufmerksam (undervalued) oder auf eine geringe Lücke zu dem Preis, bei dem die Bewertung durch das Anlagevermögen gedeckt ist (likely undervalued). Außerdem ist zu beachten, dass diese Art der Bewertung keinen Umkehrschluss auf Unternehmen mit gegenteiligen Tendenzen erlaubt, da die Deckung der Bewertung durch Anlagevermögen sektorabhängig ist.
-
-
-
-
-
-
-
-
-
-
-
-
