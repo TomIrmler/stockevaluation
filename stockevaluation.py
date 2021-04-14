@@ -5,7 +5,6 @@ import concurrent.futures
 from urllib.error import HTTPError
 from urllib.request import urlopen
 import json
-import time
 
 fa_key_list = [
 "eac1e8123c3c726a7b4ea0afab0435ae",
@@ -195,45 +194,47 @@ def rate(ticker, mode):
         PayoutRatioScore=ratePayoutRatio(dividendsPaid, sharesOutstanding, eps, mode)*weight_PoR*100
 
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
-        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                                                   #evtl direkt holen
+        Valuation = FairValue(marketcap, totalAssets, totalLiabilities, sharesOutstanding)                                                   
 
-        ScoreMargeRound=round(MargeScore,2)
-        ScoreLiquidityRound=round(LiquidityScore,2)
-        ScoreDividendyieldRound=round(DividendyieldScore,2)
-        ScoreUmsatzRound=round(UmsatzScore,2)
-        ScoreEKQRound=round(EKQScore,2)
-        ScoreKGVRound=round(KGVScore,2)
-        ScoreDCFRound=round(DCFScore,2)
-        ScoreGewinnwachstumRound=round(GewinnwachstumScore,2)
-        ScoreKWGWVRound=round(KWGWVScore,2)
-        ScorePayoutRatioRound=round( PayoutRatioScore,2)
-
-        maxMarge=round(weight_BruttoMarge*800,2)
-        maxLiquidity=round(weight_Aktienliquidität*800,2)
-        maxDividendyield=round(weight_Dividendenrendite*800,2)
-        maxEKQ=round(weight_EKQ*800,2)
-        maxKGV=round(weight_KGV*800,2)
-        maxUmsatz=round(weight_Umsatz*800,2)
-        maxDCF=round(weight_DCFV*800,2)
-        maxGewinnwachstum=round(weight_Gewinnwachstum*800,2)
-        maxKWGWV=round(weight_KWGWV*800,2)
-        maxPayoutRatio=round(weight_PoR*800,2)
-
-        nomMarge=round(ebitdaratio*100,2)
-        nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,2)
-        nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,2)
-        nomKGV=round(price/eps,2)
-        nomLiquidity=round(volume*price/1000000,2)
-        nomUmsatz=round(revenue/1000000,2)
-        nomDCF=round(dcf/stockprice,2)
-        nomGewinnwachstum=round((((ebitda-ebitdavor3)/ebitdavor3)/3)*100,2)
-        nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
-        nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
 
         if mode == "compare":
             return [Gesamtscore, Valuation[0]]
         
         else:
+
+            ScoreMargeRound=round(MargeScore,2)
+            ScoreLiquidityRound=round(LiquidityScore,2)
+            ScoreDividendyieldRound=round(DividendyieldScore,2)
+            ScoreUmsatzRound=round(UmsatzScore,2)
+            ScoreEKQRound=round(EKQScore,2)
+            ScoreKGVRound=round(KGVScore,2)
+            ScoreDCFRound=round(DCFScore,2)
+            ScoreGewinnwachstumRound=round(GewinnwachstumScore,2)
+            ScoreKWGWVRound=round(KWGWVScore,2)
+            ScorePayoutRatioRound=round( PayoutRatioScore,2)
+
+            maxMarge=round(weight_BruttoMarge*800,2)
+            maxLiquidity=round(weight_Aktienliquidität*800,2)
+            maxDividendyield=round(weight_Dividendenrendite*800,2)
+            maxEKQ=round(weight_EKQ*800,2)
+            maxKGV=round(weight_KGV*800,2)
+            maxUmsatz=round(weight_Umsatz*800,2)
+            maxDCF=round(weight_DCFV*800,2)
+            maxGewinnwachstum=round(weight_Gewinnwachstum*800,2)
+            maxKWGWV=round(weight_KWGWV*800,2)
+            maxPayoutRatio=round(weight_PoR*800,2)
+
+            nomMarge=round(ebitdaratio*100,2)
+            nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,2)
+            nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,2)
+            nomKGV=round(price/eps,2)
+            nomLiquidity=round(volume*price/1000000,2)
+            nomUmsatz=round(revenue/1000000,2)
+            nomDCF=round(dcf/stockprice,2)
+            nomGewinnwachstum=round((((ebitda-ebitdavor3)/ebitdavor3)/3)*100,2)
+            nomKWGWV=round(((price-pricevor1)/pricevor1)/((ebitda-ebitdavor1)/ebitdavor1),2)
+            nomPayoutRatio=round(((dividendsPaid/sharesOutstanding)/eps)*(-100), 2)
+
             normalreturn = f"""\nDer Gesamtscore für {ticker} beträgt {Gesamtscore} von 800 Punkten.\nDieser Score setzt sich wie folgt zusammen:\n
 Ebitda-Marge\t\t\t\t{ScoreMargeRound} / {maxMarge}\t({nomMarge}%)
 Aktienliquidität\t\t\t{ScoreLiquidityRound} / {maxLiquidity}\t({nomLiquidity} mio.)
