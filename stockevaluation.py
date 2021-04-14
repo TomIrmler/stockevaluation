@@ -67,7 +67,6 @@ exchange_rates = json.loads(urlopen(OXR).read().decode("utf-8"))
 
 def Euro(Wert, Währung):
 
-    global exchange_rates
     USDtoEUR = exchange_rates["rates"]["EUR"]
     USDtoWährung = exchange_rates["rates"][Währung]
     WertinEUR = Wert / USDtoWährung * USDtoEUR
@@ -139,8 +138,6 @@ def get_data(ticker,mode, sdate = None, fdate = None):
 def rate(ticker, mode):
 
     try:
-        global exchange_rates
-
         data = get_data(ticker, "rate")
         
         if data == "Fehler":
