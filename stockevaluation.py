@@ -597,7 +597,9 @@ rate + <Ticker Symbol>\t\t\t- Rating durchführen
 rate + <mehrere Ticker Symbole>\t\t- Aktien vergleichen
 info + <Ticker Symbol>\t\t\t- Informationen anzeigen
 sum  + <Ticker Symbol>\t\t\t- Kurzbeschreibung anzeigen
-ende\t\t\t\t\t- Programm beenden\n""")
+ende\t\t\t\t\t- Programm beenden\n
+Momenatan können alle Tickersymbole von Unternehmen eingegeben werden, die an US-Börsen notieren.
+(z.B. "AAPL", "NFLX", "MSFT", "KO", "GOOGL", etc.)\n""")
 
 
 def askforpref(k_index, total):
