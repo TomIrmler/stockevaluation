@@ -2,7 +2,9 @@
 #Gruppenarbeit von Le, Caspar und Tom (11A)
 
 #import von Librarys um die Daten herunterzuladen und zu verarbeiten:
+#Multithreading:
 import concurrent.futures 
+#Daten herunterladen und verarbeiten:
 from urllib.error import HTTPError
 from urllib.request import urlopen
 import json
@@ -62,7 +64,7 @@ fa_key_list = [
 "008ebc576253d43950dd0ea81590dfbd"
 ]
 
-#Anfangs wird API-Key nummer 1 genutzt, wenn der verbraucht ist, wird zum nächsten gewechselt:
+#Anfangs wird API-Key nummer 1 genutzt:
 fa_key_num = 0
 api_key = fa_key_list[0]
 #Herunterladen von aktuellen Währungskursen über OpenExchangeRates:
@@ -71,7 +73,10 @@ OXR = "https://openexchangerates.org/api/latest.json?app_id=dcbc87eb811b4fcba9e2
 exchange_rates = json.loads(urlopen(OXR).read().decode("utf-8"))
 
 
-#Eine Menge einer beliebigen Währung wird über USD in Euro umgerechnet:
+#Anfangs werden Funktionen definiert:
+
+
+#Funktion, um eine Menge einer beliebigen Währung über USD in Euro umzurechnen:
 def Euro(Wert, Währung):
 
     USDtoEUR = exchange_rates["rates"]["EUR"]
@@ -81,7 +86,7 @@ def Euro(Wert, Währung):
     return WertinEUR
 
 
-#die jeweilgen Daten werden heruntergeladen:
+#Funktion, um die jeweilgen Daten herunterzuladen:
 #ticker bestimmt für welche Aktie daten geladen werden sollen
 #je nach mode werden andere Daten geladen
 #sdate und fdate werden nur in einem mode gebraucht, um eine Zeitspanne anzugeben.
@@ -91,15 +96,24 @@ def get_data(ticker, mode, sdate = None, fdate = None):
     #Unterfunktion download() fragt Daten an und verarbeitet gegebenenfalls Fehler
     def download(link):
         try:
+            #die Rohe Serverantwort = r
             r = urlopen(link)
+            #r wird eingelesen und als durchsuchbares dictionary (JSON-Format) in data gespeichert
             data = json.loads(r.read().decode("utf-8"))
+
+            #Fehler werden abgefangen, bei denen keine Exception geraised wird (bei denen die Website trotzdem normal antwortet):
+            #Wenn die URL mit folgendem Fehlertext antwortet -> wird "invalid Key" returned
             if data == {'Error Message': 'Invalid API KEY. Please retry or visit our documentation to create one FREE https://financialmodelingprep.com/developer/docs'}:
                 return "Invalid Key"
+            #Wenn die Website eine Leere liste anzeigt -> Fehler
             elif data == []:
                 return "Fehler"
             else:
+                #wenn kein Fehler auftritt, wird data zurückgegeben
                 return data
 
+        # Wenn der HTTP-Error 403 auftritt wird das extra gemeldet, da dann ein API-Key verbraucht ist
+        # Bei allen anderen Fehlern -> "Fehler"
         except HTTPError as err:
             if err.code == 403:
                 return "403 Error"
@@ -121,8 +135,8 @@ def get_data(ticker, mode, sdate = None, fdate = None):
         incomeLink = "https://financialmodelingprep.com/api/v3/income-statement/" + ticker + "?limit=4" + "&apikey=" + api_key
         link_list = [quoteLink, balanceLink, cashflowLink, DCFLink, incomeLink]
 
-        #aus Zeitgründen werden die Date nicht nacheinander geladen.
-        #Es wird ein Pool von 5 Threads (Ablaufsträngen) erstellt, alle fragen parallel ihre Daten an
+        #aus Zeitgründen werden die Datensätze nicht nacheinander geladen.
+        #Es wird ein Pool von 5 Threads (Ablaufsträngen) erstellt, alle fragen parallel ihre Daten an.
         #jeder link in link_list wird jeweils in download() übergeben und in einem der fünf threads gestartet
         #with wartet bis alle threads fertig sind
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -142,7 +156,7 @@ def get_data(ticker, mode, sdate = None, fdate = None):
 
         results = [download(hpriceLink)]
     
-    #Falls download() ein Fehler bemerkt und als dessen Ergebnis returned hat, wird das hier verarbeitet
+    #Falls download() ein Fehler bemerkt und als Ergebnis returned hat, wird das hier verarbeitet
     if "403 Error" in results or "Invalid Key" in results:
         
         #im Falle von "403" oder Invalid Key, wird zum nächsten API-Key gewechselt und die Funktion nochmal mit gleichen Parametern ausgeführt
@@ -151,11 +165,12 @@ def get_data(ticker, mode, sdate = None, fdate = None):
             return get_data(ticker, mode, sdate, fdate)
         else:
             return "kein API-Key"
-
+    
+    #"Fehler" wird an weitergereicht
     elif "Fehler" in results:
         return "Fehler"
 
-    #wenn kein Fehler in results war, wird es als ergebnis zurückgegeben
+    #wenn kein Fehler in results war, wird results als ergebnis zurückgegeben
     else:
         return results    
 
@@ -193,7 +208,7 @@ def rate(ticker, mode):
         if statement_currency not in exchange_rates["rates"]:
             return "Error: Die Zahlen der Aktie \"{0}\" sind in einer unbekannten Währung angegeben.".format(ticker)
 
-        #Aus den verschiedenen Datensätzen werden relevante Zahlen geholt und gegebenenfalls in Euro umgerechnet:
+        #Aus den verschiedenen Datensätzen werden relevante Zahlen geholt, gegebenenfalls in Euro umgerechnet und in Variablen gespeichert:
         ebitda = Euro(incomevor0["ebitda"], statement_currency)  
         ebitdavor1 = Euro(incomevor1["ebitda"], statement_currency)
         ebitdavor3 = Euro(incomevor3["ebitda"], statement_currency)       
@@ -229,10 +244,11 @@ def rate(ticker, mode):
         #Aus den Teil-Scores wird der Gesamtscore errechnet:
         Gesamtscore=round(KGVScore+MargeScore+EKQScore+DividendyieldScore+UmsatzScore+LiquidityScore+DCFScore+GewinnwachstumScore+KWGWVScore+PayoutRatioScore,2)
         
-        #wenn rate von der Funktion compare() mit mode "compare" gerufen wird, wird nur Endergebnis returned 
+        #wenn rate von der Funktion compare() mit mode "compare" gerufen wird, wird nur das Endergebnis returned 
         if mode == "compare":
             return [Gesamtscore, Valuation[0]]
         
+        #wenn rate() nicht mit mode "compare" aufgerufen bzw. gecallt wird:
         else:
             #Scores werden für die Ausgabe gerundet:
             ScoreMargeRound=round(MargeScore,2)
@@ -283,13 +299,13 @@ Kurs-DCF-Verhältnis\t\t\t{ScoreDCFRound} / {maxDCF}\t({nomDCF})
 Kurswachstum zu Gewinnwachstum\t\t{ScoreKWGWVRound} / {maxKWGWV}\t({nomKWGWV})
 Payout-Ratio\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\t({nomPayoutRatio}%)\n"""
 
-            #falls das ergebnis von valuation relevant ist, wird noch ein extra satz mit dessen Ergebnis vorangestellt
+            #falls das ergebnis von valuation relevant ist, wird noch ein extra satz mit dessen Ergebnis vorangestellt und returned
             if Valuation[0] == "undervalued" or Valuation[0] == "likely undervalued":
                 addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
                 newreturn= addreturn + normalreturn 
                 return(newreturn)
             
-            #wenn nicht wird der normale returnstring returned
+            #wenn nicht, wird der normale returnstring returned
             else:
                 return normalreturn
 
@@ -301,10 +317,8 @@ Payout-Ratio\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\t({nomPayoutRatio
         return "Ein Fehler ist aufgetreten."
 
 
-#bezieht sich auf die globalen variablen api_key und API-Key nummer
-#erhöht die nummer um eins und definiert den neuen Key 
-#fals das funktionert returned sie True, wenn die Keyliste an Stelle[n] keinen Key hat
-# -> IndexError -> return False -> keine API-Keys
+#switchkey() wechselt zum nächsten API-Key und gibt bei erfolg True zurück
+#Wenn ein IndexError auftritt ist switchkey() am ende der Key-Liste angekommen und gibt False zurück
 def switchkey():
     global api_key
     global fa_key_num
@@ -317,7 +331,7 @@ def switchkey():
     except IndexError:
         return False 
 
-#compare führt rate auf eine Liste von Aktien aus und erstellt anhand der Ergebnisse eine Tabelle
+#compare() führt rate auf eine Liste von Aktien aus und erstellt anhand der Ergebnisse eine Tabelle
 def compare(tickerliste):
     flist = []
     highest = []
@@ -343,9 +357,9 @@ def compare(tickerliste):
         elif rating[0] == "\nUnterbrochen":
             return rating[0]
 
-        #falls kein Fehler aufgetreten, wird geprüft, ob das Ergebnis von Valuation relevant ist
-        #falls ja wird das rating zusätzlich in die jeweilige Liste geschrieben
-        #falls nicht wird die valuation-stelle in rating gelöscht
+        #falls kein Fehler aufgetreten ist, wird geprüft, ob das Ergebnis von Valuation relevant ist:
+        #falls ja, wird das rating zusätzlich in die jeweilige Liste geschrieben
+        #falls nicht, wird die valuation-stelle in rating gelöscht
         else:
             if rating[0][1] == "undervalued":
                 undervalued.append(rating)
@@ -361,8 +375,8 @@ def compare(tickerliste):
         #außerdem wird der Fortschritt ausgegeben
         print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
-    #flist wird anhand der nullten stelle der nullten stelle (der Score) sortiert
-    #Falls da "Fehler" steht, wird für dieses element mit -10 eingeordnet. Die Fehler stehten hinten
+    #flist wird anhand der nullten stelle der nullten stelle (dem Score) sortiert
+    #Falls da "Fehler" steht, wird dieses element mit -10 eingeordnet -> Die Fehler stehen hinten
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
     #gleiches gilt für die listen mit undervalued und likelyUndervalued Aktien
     undervalued.sort(key=lambda score: score[0][0], reverse=True)
@@ -375,10 +389,12 @@ def compare(tickerliste):
     #in flist kommen alle übrigen ratings
     flist = flist[len(highest):[-len(failed) if len(failed) > 0 else None][0]]                               
 
-    #es wird angefangen, den returnstring zu füllen
+    #Jetzt wird returnstring mit den in Text gefassten ergebnissen gefüllt:
+
+    #Anfangssatz:
     returnstring += "Es wurden insgesamt {0} Ticker gerated, bei {1} ist ein Fehler aufgetreten.\n".format(len(tickerliste), len(failed))
 
-    #falls undervalued und likelyundervalued nicht leer sind werden die elemente nach einer Beschreibung der reihe nach hinzugefügt
+    #falls undervalued und likelyundervalued nicht leer sind, werden die Elemente (nach einer Beschreibung) der reihe nach hinzugefügt
     if len(undervalued) > 0:
         returnstring += "\nKlar unterbewertete Unternehmen:\n"
         for rating in undervalued:
@@ -393,12 +409,12 @@ def compare(tickerliste):
 
         returnstring += "\n"
 
-    #danach werden alle Ergebnisse hinzugefügt
+    #danach werden alle Ergebnisse hinzugefügt:
     returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
 
-    #wenn im for loop gerade stelle 0 dran ist, wird erstmal ein Leerzeichen angehägt
+    #wenn im for loop gerade die stelle 0 dran ist, wird erstmal ein Leerzeichen angehägt
     #sonst werden alle Elemente der Liste nach und nach in strings eingebettet und angehängt
-    #je nach läcge des tickers werden ein oder zwei tabs genutz, damit die tabelle konsistent bleibt
+    #je nach länge des tickers werden ein oder zwei tabs genutz, damit die tabelle konsistent eingerückt bleibt
     for index, rating in enumerate(highest):
         tabs = 2 if len(rating[1]) <= 4 else 1
         if index == 0:
@@ -422,7 +438,7 @@ def compare(tickerliste):
 
 
 #Hier folgen jetzt die Funktionen die eine Kennzahl einstufen und dieser einen Score zwischen 1 und 8 zurückgeben:
-#Alle sind sehr ähnlich aufgebaut, Schwellwerte und Einstufungsbereiche sind von der Kennzahl abhängig
+#Alle sind sehr ähnlich aufgebaut, Schwellwerte bzw. Einstufungsbereiche sind von der Kennzahl abhängig
 
 #Beispiel:
 def rateKGV(price, eps):  
@@ -675,21 +691,23 @@ rate + <Ticker Symbol>\t\t\t- Rating durchführen
 rate + <mehrere Ticker Symbole>\t\t- Aktien vergleichen
 info + <Ticker Symbol>\t\t\t- Informationen anzeigen
 sum  + <Ticker Symbol>\t\t\t- Kurzbeschreibung anzeigen
-ende\t\t\t\t\t- Programm beenden\n""")
+ende\t\t\t\t\t- Programm beenden\n
+Momenatan können alle Tickersymbole von Unternehmen eingegeben werden, die an US-Börsen notieren.
+(z.B. "AAPL", "NFLX", "MSFT", "KO", "GOOGL", etc.)\n""")
 
 
 #Hilfsfunktion für setpreferences()
 def askforpref(k_index, total):
 
     #Je nach Kennzahlnummer wird eine anderer Fragesatz zurückgegeben
-    #Außerdem werden die übrigen zu gewichtenden Zahlen errechnet und die noch zu vergebende Menge wird eingebettet
+    #Außerdem werden die übrigen, zu gewichtenden Zahlen errechnet und die noch zu vergebende Menge wird eingebettet
     k_strings = ["der KGV", "die Ebitda-Marge", "die Eigenkapitalquote", "die Dividendenrendite", "der Umsatz", "die Aktienliquidität", "das Kurs-zu-DCF-Verhältnis", "das Verhältnis von Kurswachstum zu Gewinnwachstum", "das Payout-Ratio", "das Gewinnwachstum" ]
     k_string = k_strings[k_index]
     übrige = 10-k_index
     return f"\nWie viel Prozent des Scores soll {k_string} ausmachen?\nSie können noch {total}% auf {übrige} Kennzahlen aufteilen: "
 
 
-#Diese Funktion lässt den Nutzer neue Gewichtungen einstellen
+#Diese Funktion lässt den Nutzer neue Gewichtungen einstellen:
 def setpreferences():
 
     #Zuerst werden die aktuellen Gewichtungen und eine Anleitung ausgegeben
@@ -705,8 +723,7 @@ def setpreferences():
     while i < 10:
         try:
             #An der Stelle i wird in der Liste der neuen Gewichtungen das als float Zahl gespeichert,
-            #was der Nutzer auf die Frage, die askforpref() ihm stellt antwortet
-            #askforpref() baut anhand der Nummer der Kennzahl (bzw. i und der zu Vergebenden Menge) eine angepasste Aufforderung zusammen
+            #was der Nutzer auf die Frage, die askforpref() ihm stellt antwortet.
             new_weights[i] = float(input(askforpref(i, total)))
 
             #Dieser Wert wird von der zu vergebenden Menge abgezogen
@@ -719,6 +736,8 @@ def setpreferences():
             #Dann wird diese Fehlermeldung ausgegeben und die gleiche Gewichtung wird nochmal abgefragt
             print("\nGeben Sie bitte eine ZAHL ein. (Komma = Punkt).\n")
             
+    #Wenn die Summe der neu festgelegten Gewichtungen genau 100 entspricht,
+    #werden sie in die globalen variablen übertragen
     if  sum(new_weights) == 100:
 
         global weight_KGV
@@ -745,12 +764,15 @@ def setpreferences():
 
         print("")
 
+    #Falls nicht -> Fehlermeldung
     else:
         print("Die Summe Ihrer Prozentangaben liegt nicht bei genau 100. Ihre Eingaben wurden nicht übernommen.\n")
 
 
+#info() gibt einige Informationen über eine Aktie aus
 def info(ticker, mode):
 
+    #zuerst werden die relevanten Daten geholt und mögliche Fehler abgefangen
     data = get_data(ticker, "info")
     if data == "Fehler":
         return "Es ist ein Fehler aufgetreten."
@@ -758,7 +780,9 @@ def info(ticker, mode):
         return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
     else:
         profile = data[0][0]
-        
+    
+    #im mode "info" gibt info() eine Tabelle mit verschiedenen Infos zurück:
+    #zuerst werden die Variablen mit Daten aus dem geladenen Datensatz bestückt
     if mode == "info":
         symbol = ticker
         name = profile["companyName"]
@@ -787,13 +811,18 @@ Adresse\t\t\t\t{address}
 Stadt\t\t\t\t{city}, {state}, {country}
 Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
+    #im mode "describe" wird die Unternehmens-"description" returned
     else:
         description = profile["description"]
         return str("\n" + description + "\n")
 
 
+##################################################
+# Ab hier beginnt der eigentliche Programmablauf #
+##################################################
 
 
+#Standartmäßig haben alle Kenzahlen die gleiche Gewichtung
 weight_KGV = 1/10
 weight_BruttoMarge = 1/10
 weight_EKQ = 1/10
@@ -805,59 +834,92 @@ weight_KWGWV = 1/10
 weight_PoR = 1/10
 weight_Gewinnwachstum = 1/10
 
+#über das auf "False" Stellen der variable running kann die Endlosschleife des Programms gestoppt werden
+#standardmäßig ist running True
 running = True
 
 try:
+    #am Anfang wird eine Kurze Anleitung ausgegeben
     print("""\n\nDer Aktienbewerter bewertet eine Aktie nach persönlich gewichtbaren Kennzahlen. Die Interpretation dieser Kennzahlen
 (was gut und was schlecht ist) sieht Value-Unternehmen mit hoher Dividendenrendite als ideal an. \nDer höchste Score liegt bei 800.
 Tippen Sie 'hilfe', um eine Übersicht aller Befehle zu erhalten.\n""")
 
+    #Hauptschleife:
+    #Solange das Programm nicht beendet wird, läuft es in einer Endlosschleife
     while running == True:
 
+        #Prompt bzw. Eingabemöglichkeit für den Nutzer:
         input_main = input("<§> ")
 
+        #Eingaben werden nicht beachtet, sind sie nur Leerzeichen oder nichts (der Nutzer hat nur Enter gedrückt)
         if input_main.isspace() == False and input_main != "":
 
+            #Der eingabestring wird in seine Wörter zerlegt -> Befehle mit mehreren Komponenten sind möglich
             input_main = input_main.split()
+            #außer dem ersten Wort, werden alle Worte in großbuchstaben umgewandelt
+            #ob man "rate AAPL" oder "rate aaPL" schreibt ist also egal
             input_main = [content.upper() if index != 0 else content for index, content in enumerate(input_main)]
 
+
+            #Je nach Benutzereingabe wird eine andere Funktion ausgeführt:
+
+            #Falls der Nutzer NUR "set" eingibt -> setpreferences()
             if input_main[0] == "set" and len(input_main) == 1:
                 setpreferences()
 
+
+            #Falls der Nutzer NUR "show" eingibt -> showpreferences()
             elif input_main[0] == "show" and len(input_main) == 1:
                 showpreferences()
 
+
+            #Falls das erste Wort "rate" ist
             elif input_main[0] == "rate":
+
+                #und nichts folgt -> Korrekturanweisung
                 if len(input_main) == 1:
                     print('Geben Sie mindestens ein Ticker Symbol hinter "rate" ein. (z.B. AAPL, TSLA)')
                 
+                #und genau EIN Tickersymbol folgt -> rate(Wort2)
                 elif len(input_main) == 2:
                     print(rate(input_main[1], "rate"))
 
+                #und mehr als ein Tickersymbol folgt -> compare(Wörter ab Wort2)
                 elif len(input_main) > 2:
                     print(compare(input_main[1:]))
 
+
+            #Falls das erste Wort "info" ist
             elif input_main[0] == "info":
+
+                #und EIN weiteres Wort folgt -> info(Wort2)
                 if len(input_main) == 2:
                     print(info(input_main[1], "info"))
+
+                #und kein weiteres Wort folgt -> Korrekturanweisung
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "info" ein. (z.B. AAPL, TSLA)')
                 
+            #genau so bei sum
             elif input_main[0] == "sum":
                 if len(input_main) == 2:
                     print(info(input_main[1], "sum"))
                 else:
                     print('Geben Sie EIN Ticker Symbol hinter "sum" ein. (z.B. AAPL, TSLA)')
 
+            #Wenn Wort1 hilfe ist -> helppage()
             elif input_main[0] == "hilfe":
                 helppage()
 
+            #Wenn Wort1 ende ist -> setzte running auf False und printe "BEENDET" -> Programm endet
             elif input_main[0] == "ende":
                 running = False
                 print("BEENDET")
 
+            #Wenn das erste Wort keinem dieser Befehle entspricht -> "Unbekannter Befehl"
             else:
                 print('Unbekannter Befehl. Geben Sie "hilfe" ein, um die Anleitung angezeigt zu bekommen.' )
 
+#Wenn das Programm durch STRG+C beendet wird -> keine Fehlermeldung, sondern "BEENDET"
 except KeyboardInterrupt:
         print("\nBEENDET")
