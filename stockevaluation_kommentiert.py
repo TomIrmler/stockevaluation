@@ -342,7 +342,7 @@ def compare(tickerliste):
     print("")
 
     #für jeden ticker in tickerliste
-    for ticker in tickerliste:
+    for index, ticker in enumerate(tickerliste):
 
         #wird eine Liste erstellt in die das ergebniss von rate und der Ticker eingetragen wird
         rating = [rate(ticker, "compare"), ticker]
@@ -373,7 +373,7 @@ def compare(tickerliste):
         #am ende jeder wiederholung wird rating in die liste der fertigen ratings geschrieben
         flist.append(rating)
         #außerdem wird der Fortschritt ausgegeben
-        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
+        print("Ticker {0}/{1} gerated. ({2})".format(index+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
     #flist wird anhand der nullten stelle der nullten stelle (dem Score) sortiert
     #Falls da "Fehler" steht, wird dieses element mit -10 eingeordnet -> Die Fehler stehen hinten
@@ -416,19 +416,19 @@ def compare(tickerliste):
     #sonst werden alle Elemente der Liste nach und nach in strings eingebettet und angehängt
     #je nach länge des tickers werden ein oder zwei tabs genutz, damit die tabelle konsistent eingerückt bleibt
     for index, rating in enumerate(highest):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1, rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(flist):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1+len(highest)))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest), rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(failed):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1+len(highest)+len(flist)))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest)+len(flist), rating[1], "\t"*tabs, rating[0][0])
