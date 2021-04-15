@@ -281,7 +281,7 @@ def compare(tickerliste):
 
     print("")
 
-    for ticker in tickerliste:
+    for index, ticker in enumerate(tickerliste):
 
         rating = [rate(ticker, "compare"), ticker]
 
@@ -305,7 +305,7 @@ def compare(tickerliste):
                 del rating[0][1]
 
         flist.append(rating)
-        print("Ticker {0}/{1} gerated. ({2})".format(tickerliste.index(ticker)+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
+        print("Ticker {0}/{1} gerated. ({2})".format(index+1, len(tickerliste), ticker) + " "*(len(tickerliste[tickerliste.index(ticker)-1])-len(ticker)), end="\r")
     
     flist.sort(key=lambda x: x[0][0] if x[0][0] != "Fehler" else -10, reverse=True)
     undervalued.sort(key=lambda score: score[0][0], reverse=True)
@@ -334,19 +334,19 @@ def compare(tickerliste):
     returnstring += "\nAlle Ergebnisse im Überblick:\nTicker:\t\tScore:\n"
 
     for index, rating in enumerate(highest):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1, rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(flist):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1+len(highest)))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest), rating[1], "\t"*tabs, rating[0][0])
 
     for index, rating in enumerate(failed):
-        tabs = 2 if len(rating[1]) <= 4 else 1
+        tabs = 2 if len(rating[1])+len(str(index+1+len(highest)+len(flist)))+2 < 8 else 1
         if index == 0:
             returnstring += "\n"
         returnstring += "{0}. {1}{2}{3}\n".format(index+1+len(highest)+len(flist), rating[1], "\t"*tabs, rating[0][0])
