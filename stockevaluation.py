@@ -702,16 +702,16 @@ Börsengang\t\t\t{ipoDay}.{ipoMonth}.{ipoYear}\n"""
 
 
 
-weight_KGV = 1/10
-weight_BruttoMarge = 1/10
-weight_EKQ = 1/10
-weight_Dividendenrendite = 1/10
-weight_Umsatz = 1/10
-weight_Aktienliquidität = 1/10
-weight_DCFV = 1/10
-weight_KWGWV = 1/10
-weight_PoR = 1/10
-weight_Gewinnwachstum = 1/10
+weight_KGV = 0.15
+weight_BruttoMarge = 0.1
+weight_EKQ = 0.10
+weight_Dividendenrendite = 0.075
+weight_Umsatz = 0.075
+weight_Aktienliquidität = 0.1
+weight_DCFV = 0.15
+weight_KWGWV = 0.075
+weight_PoR = 0.05
+weight_Gewinnwachstum = 0.125
 
 running = True
 
