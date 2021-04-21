@@ -245,7 +245,7 @@ Kurswachstum zu Gewinnwachstum\t\t{ScoreKWGWVRound} / {maxKWGWV}\t({nomKWGWV})
 Payout-Ratio\t\t\t\t{ScorePayoutRatioRound} / {maxPayoutRatio}\t({nomPayoutRatio}%)\n"""
 
             if Valuation[0] == "undervalued" or Valuation[0] == "likely undervalued":
-                addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€"""
+                addreturn = f"""\nDie Aktie ist {Valuation[0]} mit einem fairen-Preis (nach Assets und Marktkapitalisierung) von {round(Valuation[1],2)}€.\n(Der aktuelle Preis liegt bei {round(price,2)}€).\n"""
                 newreturn= addreturn + normalreturn 
                 return(newreturn)
                 
@@ -666,9 +666,11 @@ def info(ticker, mode):
         return "Alle angegebenen API-Keys für Fundamental Analysis sind aufgebraucht oder ungültig."
     else:
         profile = data[0][0]
-        
+
     if mode == "info":
         symbol = ticker
+        price = round(profile["price"],2)
+        priceEUR = round(Euro(profile["price"], "USD"),2)
         name = profile["companyName"]
         exchangeShortName = profile["exchangeShortName"]
         sector = profile["sector"]
@@ -686,6 +688,7 @@ def info(ticker, mode):
 
         return f"""\nTicker\t\t\t\t{symbol}
 Name\t\t\t\t{name}
+Preis\t\t\t\t{priceEUR}€ ({price}$)
 Exchange\t\t\t{exchangeShortName}
 Branche\t\t\t\t{sector}
 Industriezweig\t\t\t{industry}
