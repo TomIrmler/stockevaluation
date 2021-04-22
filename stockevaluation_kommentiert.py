@@ -226,13 +226,14 @@ def rate(ticker, mode):
         ebitdaratio = Euro(incomevor0["ebitdaratio"], statement_currency)
         eps = Euro(incomevor0["eps"], statement_currency)
         marketcap = Euro(quote["marketCap"], quote_currency)
+        totalEquity = Euro(balance["totalStockholdersEquity"], statement_currency)
 
         #Die Scoring Unterfunktionen werden mit deren benötigten Zahlen aufgerufen und deren Rückgabe mit ihrer Gewichtung verrechnet:
         MargeScore=rateMarge(ebitdaratio)*weight_BruttoMarge*100
         LiquidityScore=rateLiquidity(volume, price)*weight_Aktienliquidität*100
         DividendyieldScore=rateDividenyield(dividendsPaid, sharesOutstanding, price)*weight_Dividendenrendite*100
         UmsatzScore=rateUmsatz(revenue)*weight_Umsatz*100
-        EKQScore=rateEKQ(totalAssets,totalLiabilities)*weight_EKQ*100
+        EKQScore=rateEKQ(totalEquity,totalAssets)*weight_EKQ*100
         KGVScore=rateKGV(price,eps)*weight_KGV*100
         DCFScore=rateDCFV(stockprice,dcf)*weight_DCFV*100
         GewinnwachstumScore=rateGewinnwachstum(ebitda, ebitdavor3)*weight_Gewinnwachstum*100
@@ -277,7 +278,7 @@ def rate(ticker, mode):
             #Die absoluten Zahlen werden für die Ausgabe gerundet:
             nomMarge=round(ebitdaratio*100,2)
             nomdividendyield=round((dividendsPaid*(-1)/sharesOutstanding)/price*100,2)
-            nomEKQ=round(((totalAssets-totalLiabilities)/totalAssets)*100,2)
+            nomEKQ=round((totalEquity/totalAssets)*100,2)
             nomKGV=round(price/eps,2)
             nomLiquidity=round(volume*price/1000000,2)
             nomUmsatz=round(revenue/1000000,2)
@@ -537,8 +538,8 @@ def rateUmsatz(umsatz):
 
 	return(score)
 
-def rateEKQ(assets, liabilities):
-    EKQ=(assets-liabilities)/assets
+def rateEKQ(equity, assets):
+    EKQ = equity/assets
     schwellenwerte=[0.02,0.1,0.2,0.3,0.4,0.6,0.8]
 
     if EKQ<0.02:
@@ -731,6 +732,9 @@ def setpreferences():
 
             #Wenn das geklappt hat, gehe zur nächsten Gewichtung
             i += 1
+        except KeyboardInterrupt:
+            print("\nDie Anpassung der Gewichtung wurde abgebrochen.\n")
+            return None
         except:
             #Falls der Nutzer keine Zahl eingibt, kommt es zum Fehler in dem "try"-Bereich
             #Dann wird diese Fehlermeldung ausgegeben und die gleiche Gewichtung wird nochmal abgefragt
